@@ -1,0 +1,39 @@
+{
+  "name": "plexus-csp",
+  "version": "0.1.0",
+  "description": "A Go-inspired async library based on ES6 generators",
+  "keywords": [
+    "async",
+    "generators",
+    "go",
+    "clojure",
+    "core.async"
+  ],
+  "homepage": "https://github.com/AppliedMathematicsANU/plexus-csp",
+  "bugs": {
+    "url": "https://github.com/AppliedMathematicsANU/plexus-csp/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Olaf Delgado-Friedrichs",
+    "email": "olaf.delgado@gmail.com"
+  },
+  "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AppliedMathematicsANU/plexus-csp.git"
+  },
+  "dependencies": {
+    "setimmediate": "~1.0.2"
+  },
+  "devDependencies": {
+    "regenerator": "~0.6.7",
+    "jasmine-node": "~1.14.5",
+    "kew": "~0.3.4",
+    "comfychair": "~0.0.2"
+  },
+  "scripts": {
+    "prepublish": "webpack -p",
+    "test": "./node_modules/.bin/jasmine-node lib"
+  }
+}
