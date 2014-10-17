@@ -1,5 +1,9 @@
 'use strict';
 
+jest.dontMock('comfychair/jasmine');
+jest.dontMock('comfychair');
+jest.dontMock('../dist/index');
+
 require('comfychair/jasmine');
 var comfy = require('comfychair');
 var csp = require('../dist/index');

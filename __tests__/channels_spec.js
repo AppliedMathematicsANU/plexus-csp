@@ -1,5 +1,9 @@
 'use strict';
 
+jest.dontMock('comfychair/jasmine');
+jest.dontMock('comfychair');
+jest.dontMock('../dist/index');
+
 require('comfychair/jasmine');
 var comfy = require('comfychair');
 var csp = require('../dist/index');
@@ -231,21 +235,21 @@ var implementation = function(type) {
 
 describe('a channel with a standard buffer', function() {
   it('conforms to the appropriate channel model', function() {
-    expect(implementation(CHECKED)).toConformTo(model(CHECKED), 1000);
+    expect(implementation(CHECKED)).toConformTo(model(CHECKED));
   });
 });
 
 
 describe('a channel with a dropping buffer', function() {
   it('conforms to the appropriate channel model', function() {
-    expect(implementation(DROPPING)).toConformTo(model(DROPPING), 1000);
+    expect(implementation(DROPPING)).toConformTo(model(DROPPING));
   });
 });
 
 
 describe('a channel with a sliding buffer', function() {
   it('conforms to the appropriate channel model', function() {
-    expect(implementation(SLIDING)).toConformTo(model(SLIDING), 1000);
+    expect(implementation(SLIDING)).toConformTo(model(SLIDING));
   });
 });
 

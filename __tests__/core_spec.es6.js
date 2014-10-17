@@ -1,6 +1,8 @@
 'use strict';
 
-var csp = require('../index');
+jest.dontMock('../dist/index');
+
+var csp = require('../dist/index');
 
 csp.longStackSupport = true;
 
