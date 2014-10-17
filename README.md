@@ -17,6 +17,9 @@ Contents
   * [More on Error Handling](#more-on-error-handling)
   * [NodeJS helpers](#nodejs-helpers)
   * [Channels](#channels)
+  * [Buffered Channels](#buffered-channels)
+  * [Working with Multiple Channels](#working-with-multiple-channels)
+  * [Select](#select)
 * [License](#license)
 
 About
@@ -334,6 +337,8 @@ We first create a channel by calling the function `chan`. We then run two go blo
 
 The `close` function closes a channel immediately, which means that all pending operations on it will be cancelled and no further data can be pushed. Pulls from a buffered channel are still possible until its buffer is exhausted. In our example, the channel is unbuffered, so there are no further values to be pulled. This is signalled to the second go block by returning the value `undefined` on the next call to `pull`.
 
+###Buffered Channels
+
 Let's now investigate some buffering options for channels. We start by defining a function that writes numbers onto a provided channel:
 
 ```javascript
@@ -393,6 +398,8 @@ The function `run` creates a channel with the specified buffer (or an unbuffered
 ```
 
 Plexus-csp provides three types of buffer, all of fixed size, which differ only in how they handle a push operation when full. A `Buffer` will block the push until a slot becomes available due to a subsequent pull. A `DroppingBuffer` will accept the push, but drop the new value. A `SlidingBuffer` will accept the push and buffer the new value, but drop the oldest value it holds in order to make room.
+
+###Working with Multiple Channels
 
 In the next example, we simulate a simple worker pool. Let's first define a function that starts a worker on a channel of jobs and returns a fresh channel with that worker's output:
 
@@ -475,6 +482,8 @@ b 10
 c 8
 a 9
 ```
+
+###Select
 
 An alternative to the merge approach is the `select` function, which takes a number of channels as arguments and returns a result of the form `{ channel: ..., value: ... }`, where `channel` is the first channel it can pull from, and `value` is the associated value. We can use this in our example as follows:
 
