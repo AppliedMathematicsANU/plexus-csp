@@ -2,14 +2,14 @@
 
 require('comfychair/jasmine');
 var comfy = require('comfychair');
-var cb = require('../index');
+var csp = require('../dist/index');
 
 
 describe('a ring buffer with an appropriate model', function() {
   var rb = {
     apply: function(command, args) {
       if (command == 'init')
-        this._data = cb.impl.RingBuffer(args[0]);
+        this._data = csp.impl.RingBuffer(args[0]);
       else
         return this._data[command].apply(this._data, args);
     }
@@ -128,7 +128,7 @@ var SLIDING  = 2;
 
 
 function buf(type) {
-  var buffer = [cb.Buffer, cb.DroppingBuffer, cb.SlidingBuffer][type];
+  var buffer = [csp.Buffer, csp.DroppingBuffer, csp.SlidingBuffer][type];
 
   return {
     apply: function(command, args) {

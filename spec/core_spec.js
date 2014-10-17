@@ -1,22 +1,22 @@
 'use strict';
 
-var cc = require('../index');
+var csp = require('../index');
 
-cc.longStackSupport = true;
+csp.longStackSupport = true;
 
 
 describe('a go block', function() {
   it('leaves plain values alone upon a yield', function(done) {
     var val = { the: 'value' };
 
-    cc.go(function*() {
+    csp.go(function*() {
       expect(yield val).toEqual(val);
       done();
     });
   }),
 
   it('passes extra arguments into its generator', function(done) {
-    cc.go(
+    csp.go(
       function*(a, b) {
         expect(a + b).toEqual(12);
         done();
@@ -27,8 +27,8 @@ describe('a go block', function() {
   it('eventually returns the return value of its generator', function(done) {
     var val = { a: 'value' };
 
-    cc.go(function*() {
-      var x = yield cc.go(function*() {
+    csp.go(function*() {
+      var x = yield csp.go(function*() {
         return val;
       });
       expect(x).toEqual(val);
@@ -39,11 +39,11 @@ describe('a go block', function() {
   it('passes along uncaught exceptions from its generator', function(done) {
     var msg = 'Ouch!';
 
-    cc.go(function*() {
+    csp.go(function*() {
       var thrown = null;
 
       try {
-        yield cc.go(function*() {
+        yield csp.go(function*() {
           throw msg;
         });
       } catch(ex) {
@@ -71,7 +71,7 @@ describe('a go block', function() {
       }
     };
 
-    cc.go(function*() {
+    csp.go(function*() {
       var thrown = null;
       try {
         yield failing;

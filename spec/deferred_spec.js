@@ -1,11 +1,11 @@
 'use strict';
 
-var cc = require('../index');
+var csp = require('../dist/index');
 
 
 var delay = function(action) {
-  cc.go(function*() {
-    yield cc.sleep(1);
+  csp.go(function*() {
+    yield csp.sleep(1);
     action();
   });
 };
@@ -33,7 +33,7 @@ describe('a deferred', function() {
   var deferred;
 
   beforeEach(function() {
-    deferred = cc.defer();
+    deferred = csp.defer();
   });
 
   describe('that has not been resolved', function() {
@@ -52,7 +52,7 @@ describe('a deferred', function() {
     it('does not yield a value', function(done) {
       var yielded = null;
 
-      cc.go(function*() {
+      csp.go(function*() {
         yielded = yield deferred;
       });
 
@@ -91,7 +91,7 @@ describe('a deferred', function() {
     });
 
     it('yields that value', function(done) {
-      cc.go(function*() {
+      csp.go(function*() {
         expect(yield deferred).toEqual(val);
         done();
       });
@@ -126,7 +126,7 @@ describe('a deferred', function() {
     });
 
     it('throws upon a yield', function(done) {
-      cc.go(function*() {
+      csp.go(function*() {
         var thrown = null;
         try {
           yield deferred;
@@ -171,7 +171,7 @@ describe('a deferred', function() {
     });
 
     it('cannot be used in a yield', function(done) {
-      cc.go(function*() {
+      csp.go(function*() {
         var thrown = null;
         try {
           yield deferred;
@@ -209,7 +209,7 @@ describe('a deferred', function() {
     beforeEach(function() {
       resolvedWith = null;
       rejectedWith = null;
-      cc.go(function*() {
+      csp.go(function*() {
         try {
           resolvedWith = yield deferred;
         } catch(ex) {
@@ -240,7 +240,7 @@ describe('a deferred', function() {
     });
 
     it('cannot be used in another yield', function(done) {
-      cc.go(function*() {
+      csp.go(function*() {
         var thrown = null;
         try {
           yield deferred;

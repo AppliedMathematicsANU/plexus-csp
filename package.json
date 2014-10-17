@@ -34,6 +34,6 @@
   },
   "scripts": {
     "prepublish": "webpack -p",
-    "test": "./node_modules/.bin/jasmine-node lib"
+    "test": "./node_modules/.bin/jasmine-node spec"
   }
 }

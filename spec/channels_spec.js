@@ -2,8 +2,7 @@
 
 require('comfychair/jasmine');
 var comfy = require('comfychair');
-var cbuf = require('ceci-buffers');
-var chan = require('../index');
+var csp = require('../dist/index');
 
 
 var merge = function() {
@@ -183,7 +182,7 @@ var handler = function(log, n, h) {
 
 
 var implementation = function(type) {
-  var Buffer = [cbuf.Buffer, cbuf.DroppingBuffer, cbuf.SlidingBuffer][type];
+  var Buffer = [csp.Buffer, csp.DroppingBuffer, csp.SlidingBuffer][type];
 
   return {
     clearLog: function() {
@@ -211,7 +210,7 @@ var implementation = function(type) {
       if (command == 'init') {
         this._log = [];
         this._count = 0;
-        this._channel = chan.chan(args[0] ? new Buffer(args[0]) : 0);
+        this._channel = csp.chan(args[0] ? new Buffer(args[0]) : 0);
       } else {
         this.clearLog();
 
