@@ -1,7 +1,7 @@
 'use strict';
 
-var cc = require('ceci-core');
-var cb = require('ceci-buffers');
+var cc = require('./core');
+var cb = require('./buffers');
 
 
 function Channel(buffer) {
