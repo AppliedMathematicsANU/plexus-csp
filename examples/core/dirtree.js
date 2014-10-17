@@ -3,7 +3,7 @@
 var fs   = require('fs');
 var path = require('path');
 
-var csp   = require('../dist/index');
+var csp   = require('../../dist/index');
 
 
 var tree = function(base, name, prefix) {

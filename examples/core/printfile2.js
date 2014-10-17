@@ -1,7 +1,7 @@
 'use strict';
 
 var fs = require('fs');
-var csp = require('../dist/index');
+var csp = require('../../dist/index');
 
 
 var readLines = function(path) {

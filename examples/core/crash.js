@@ -1,6 +1,6 @@
 'use strict';
 
-var csp = require('../dist/index');
+var csp = require('../../dist/index');
 
 csp.longStackSupport = true;
 
