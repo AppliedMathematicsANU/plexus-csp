@@ -22,9 +22,9 @@ Contents
 About
 -----
 
-Plexus-csp's take on concurrency is inspired by [Go](http://golang.org/)'s channels and goroutines, and by the [core.async](https://github.com/clojure/core.async/) library for [Clojure](http://clojure.org/). Both are strongly influenced by Tony Hoare's theory of communicating sequential processes (CSP), and somewhat related to the classical Unix concept of pipes. The common feature of all these approaches is the idea of providing a single communication mechanism, usually called a channel, between concurrent threads of execution (processes, threads, goroutines etc) with semantics that make it both practical and comparatively easy to reason about.
+The goal of plexus-csp is to provide concurrency support inspired by [Go](http://golang.org/) channels and goroutines, and by the [core.async](https://github.com/clojure/core.async/) library in [Clojure](http://clojure.org/). Both are strongly influenced by Tony Hoare's theory of communicating sequential processes (CSP), and somewhat related to the classical Unix concept of pipes. The common feature of all these approaches is the idea of providing a single communication mechanism, usually called a channel, between concurrent threads of execution (processes, threads, goroutines etc) with semantics that make it both practical and comparatively easy to reason about.
 
-The fist part of this tutorial describes the asynchronous core of plexus-csp, the aim of which is to build a solid foundation for the channel functionality while providing features that are also useful on their own. It is in some ways similar to libraries such as [co](https://github.com/visionmedia/co) which integrate asynchronous, non-blocking calls into a more traditional control flow through the use of ES6 generators, but puts a higher emphasis on composability and seamless concurrency.
+The first part of this tutorial describes the asynchronous core of plexus-csp, the aim of which is to build a solid foundation for the channel functionality while providing features that are also useful on their own. It is in some ways similar to libraries such as [co](https://github.com/visionmedia/co) which integrate asynchronous, non-blocking calls into a more traditional control flow through the use of ES6 generators, but puts a higher emphasis on composability and seamless concurrency. The second part is about channels.
 
 Installation
 ------------
@@ -38,7 +38,7 @@ npm install plexus-csp
 For easier integration, precompiled code (via [regenerator](https://npmjs.org/package/regenerator)) is included that runs on ES5 engines without generator support. To use this version, require it as follows:
 
 ```javascript
-var cc = require('plexus-csp');
+var csp = require('plexus-csp');
 ```
 
 Client code that uses go blocks still needs to run on an engine that supports generators or be precompiled into ES5-compliant code, for example with [browserify](https://github.com/substack/node-browserify) and the [regeneratorify](https://github.com/amiorin/regeneratorify) plugin.
@@ -46,13 +46,13 @@ Client code that uses go blocks still needs to run on an engine that supports ge
 When running on a JS engine that supports generators directly, such as NodeJS 0.11.x with the `--harmony` option, use the following line instead:
 
 ```javascript
-var cc = require('plexus-csp/src/index.js');
+var csp = require('plexus-csp/src/index.js');
 ```
 
 Documentation
 -------------
 
-Find the full API documentation [here](https://github.com/odf/plexus-csp/wiki/API-Documentation).
+Find the full API documentation [here](https://github.com/AppliedMathematicsANU/plexus-csp/wiki/API-Documentation).
 
 Tutorial
 --------
@@ -62,16 +62,16 @@ Tutorial
 Go blocks provide concurrent 'threads' of execution within a single Javascript thread. Let's look at a simple example:
 
 ```javascript    
-var cc = require('plexus-csp');
+var csp = require('plexus-csp');
 
 console.log("I am main");
 
-cc.go(function*() {
+csp.go(function*() {
   yield console.log("I am go block 1");
   yield console.log("I am go block 1");
 });
 
-cc.go(function*() {
+csp.go(function*() {
   yield console.log("I am go block 2");
   yield console.log("I am go block 2");
 });
@@ -96,10 +96,10 @@ Things get more interesting when we add asynchronous calls to the mix. The follo
 
 ```javascript
 var fs = require('fs');
-var cc = require('plexus-csp');
+var csp = require('plexus-csp');
 
 var readFile = function(name) {
-  var result = cc.defer();
+  var result = csp.defer();
 
   fs.readFile(name, function(err, val) {
     if (err)
@@ -115,7 +115,7 @@ var readFile = function(name) {
 This pattern will look quite familiar to those who have worked with promises, but plexus-csp's deferreds are much simpler. Here's how we can use them in go blocks:
 
 ```javascript
-cc.go(function*() {
+csp.go(function*() {
   console.log((yield readFile('package.json')).length);
   console.log((yield readFile('LICENSE')).length);
   console.log((yield readFile('README.md')).length);
@@ -135,7 +135,7 @@ A `yield` with an expression that evaluates to a deferred suspends the current g
 The code above reads the three files sequentially. We can instead read in parallel while still keeping the output in order by separating the function calls from the `yield` statements that force the results:
 
 ```javascript
-cc.go(function*() {
+csp.go(function*() {
   var a = readFile('package.json');
   var b = readFile('LICENSE');
   var c = readFile('README.md');
@@ -150,7 +150,7 @@ Finally, we can split the code into independent go routines that run concurrentl
 
 ```javascript
 var showLength = function(filename) {
-  cc.go(function*() {
+  csp.go(function*() {
     console.log(filename + ':', (yield readFile(filename)).length);
   });
 };
@@ -179,7 +179,7 @@ To be useful in practice, go blocks need to be able to return values, so that we
 
 ```javascript
 var fileLength = function(name) {
-  return cc.go(function*() {
+  return csp.go(function*() {
     return (yield readFile(name)).length;
   });
 };
@@ -188,7 +188,7 @@ var fileLength = function(name) {
 This allows us to rewrite the original 'main' function like this:
 
 ```javascript
-cc.go(function*() {
+csp.go(function*() {
   console.log(yield fileLength('package.json'));
   console.log(yield fileLength('LICENSE'));
   console.log(yield fileLength('README.md'));
@@ -202,7 +202,7 @@ Note that the value returned from within the go block will always be wrapped in 
 If you've tried any of the examples above, you may have noticed that we don't see anything like a top-level stack trace when things go wrong, for example when a file to be read does not exist. Instead of working with fixed file names in our example, we can try taking a command line argument to see this more clearly:
 
 ```javascript
-cc.go(function*() {
+csp.go(function*() {
   console.log(yield fileLength(process.argv[2]));
 });
 ```
@@ -210,7 +210,7 @@ cc.go(function*() {
 Now if we run the program with an existing file, we get a number. For a non-existent file, we get no output and no error messages whatsoever. Let's fix this:
 
 ```javascript
-cc.go(function*() {
+csp.go(function*() {
   try {
     console.log(yield fileLength(process.argv[2]));
   } catch(ex) {
@@ -223,7 +223,7 @@ On my system, this produces something like this:
 
 ```
 Error: Error: ENOENT, open 'package.jsonx'
-    at /home/olaf/Projects/PlexusII/plexus-csp/test.js:9:21
+    at /home/olaf/Projects/plexus-csp/test.js:9:21
     at fs.js:195:20
     at Object.oncomplete (fs.js:97:15)
 ```
@@ -233,7 +233,7 @@ In my version of the code, line 9 happens to be where `readFile` rejects the def
 plexus-csp provides a little utility wrapper for handling uncaught exceptions on a 'top level' deferred:
 
 ```javascript
-cc.top(cc.go(function*() {
+csp.top(cc.go(function*() {
   console.log(yield fileLength(process.argv[2]));
 }));
 ```
@@ -242,14 +242,14 @@ This produces the same stack trace as above.
 
 ###More on Error Handling
 
-plexus-csp's error handling has a few subtleties: first, errors can only be propagated outward if each nested go block in the chain is actually forced with a `yield`. Second, the outermost go block in the call chain has nowhere to propagate to, so we need to explicitly catch exceptions as in the example above. Third, since normal stack traces reflect the Javascript call chain, which is different from the chain of go blocks, we miss a lot of useful information. For instance, there's no mention of `fileLength` or the 'main' go block in the above.
+Error handling in plexus-csp has a few subtleties: first, errors can only be propagated outward if each nested go block in the chain is actually forced with a `yield`. Second, the outermost go block in the call chain has nowhere to propagate to, so we need to explicitly catch exceptions as in the example above. Third, since normal stack traces reflect the Javascript call chain, which is different from the chain of go blocks, we miss a lot of useful information. For instance, there's no mention of `fileLength` or the 'main' go block in the above.
 
 To fix the last problem, plexus-csp has a global option `longStackSupport` (named after the analogous option for the [q](https://github.com/kriskowal/q/tree/v0.9) library) which can be used as follows:
 
 ```javascript
-cc.longStackSupport = true;
+csp.longStackSupport = true;
 
-cc.top(cc.go(function*() {
+csp.top(csp.go(function*() {
   console.log(yield fileLength(process.argv[2]));
 }));
 ```
@@ -258,14 +258,14 @@ With this switch on, I see something like this:
 
 ```
 Error: Error: ENOENT, open 'package.jsonx'
-    at /home/olaf/Projects/PlexusII/plexus-csp/test.js:9:21
+    at /home/olaf/Projects/plexus-csp/test.js:9:21
     at fs.js:195:20
     at Object.oncomplete (fs.js:97:15)
-    at Object.csp.go (/home/olaf/Projects/PlexusII/plexus-csp/lib/src/core.js:49:45)
-    at fileLength (/home/olaf/Projects/PlexusII/plexus-csp/test.js:18:13)
-    at /home/olaf/Projects/PlexusII/plexus-csp/test.js:26:21
-    at Object.csp.go (/home/olaf/Projects/PlexusII/plexus-csp/lib/src/core.js:49:45)
-    at Object.<anonymous> (/home/olaf/Projects/PlexusII/plexus-csp/test.js:25:4)
+    at Object.csp.go (/home/olaf/Projects/plexus-csp/lib/src/core.js:49:45)
+    at fileLength (/home/olaf/Projects/plexus-csp/test.js:18:13)
+    at /home/olaf/Projects/plexus-csp/test.js:26:21
+    at Object.csp.go (/home/olaf/Projects/plexus-csp/lib/src/core.js:49:45)
+    at Object.<anonymous> (/home/olaf/Projects/plexus-csp/test.js:25:4)
     [...]
 ```
 
@@ -279,11 +279,11 @@ Plexus-csp provides a few helpers that make interoperating with libraries that u
 
 ```javascript
 var fs = require('fs');
-var cc = require('plexus-csp');
+var csp = require('plexus-csp');
 
 var readFile = function(name) {
-  var result = cc.defer();
-  fs.readFile(name, cc.ncallback(result));
+  var result = csp.defer();
+  fs.readFile(name, csp.ncallback(result));
   return result;
 };
 ```
@@ -291,7 +291,7 @@ var readFile = function(name) {
 Going one step further, the `nbind` function takes a function that accepts a callback and returns one that produces a deferred:
 
 ```javascript
-var readFile = cc.nbind(fs.readFile);
+var readFile = csp.nbind(fs.readFile);
 ```
 
 Additional arguments can be given, which work just like in `Function.prototype.bind`.
@@ -299,7 +299,7 @@ Additional arguments can be given, which work just like in `Function.prototype.b
 Going the other direction, `nodeify` take a deferred and an optional callback. If used with no callback, it simply returns the deferred. Otherwise, it executes the callback accordingly when the deferred is resolved or rejected:
 
 ```javascript
-cc.nodeify(fileLength(process.argv[2]), function(err, val) {
+csp.nodeify(fileLength(process.argv[2]), function(err, val) {
   if (err)
     console.log('Oops:', err);
   else
@@ -307,9 +307,6 @@ cc.nodeify(fileLength(process.argv[2]), function(err, val) {
 });
 ```
 
-###What's Next?
-
-Go blocks and deferreds get us out of "callback hell" and avoid the typical fragmentation of program logic associated with asynchronous programming. The next layer of the library, [ceci-channels](https://github.com/odf/ceci-channels) provides blocking channels, borrowed from the Go language, as a clean way for concurrent go blocks to exchange information.
 
 License
 -------
