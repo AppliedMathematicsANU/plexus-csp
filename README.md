@@ -16,7 +16,7 @@ Contents
   * [Error Handling Basics](#error-handling-basics)
   * [More on Error Handling](#more-on-error-handling)
   * [NodeJS helpers](#nodejs-helpers)
-  * [What's Next](#whats-next)
+  * [Channels](#channels)
 * [License](#license)
 
 About
