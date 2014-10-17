@@ -88,7 +88,7 @@ exports.fromStream = function(stream, output, onOutputClosed)
 {
   var lock = exports.createLock();
 
-  var managed = output == null;
+  var managed = (output == null);
   if (managed)
     output = channels.chan();
 
