@@ -56,8 +56,7 @@ var model = function(type) {
           state : merge(state, { pullers: state.pullers.slice(1) }),
           output: [[state.pullers[0], val], [h, true]]
         };
-      } else if (n > state.buffer.length || (n > 0 && type != CHECKED))
-      {
+      } else if (n > state.buffer.length || (n > 0 && type != CHECKED)) {
         var b = state.buffer.slice();
         if (n > b.length)
           b.push(val);
@@ -179,7 +178,7 @@ var handler = function(log, n, h) {
       h && !h.isResolved() && h.reject(err);
     },
     isResolved: function() {
-      return _isResolved;
+      return _isResolved || (h && h.isResolved());
     }
   };
 };
