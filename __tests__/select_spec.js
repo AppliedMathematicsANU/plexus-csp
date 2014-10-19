@@ -102,123 +102,92 @@ var last = function(a) {
 
 
 var model = function() {
-  var _tryCh = function(state, i, cmd, arg) {
-    var result = state[i].channel.apply(state[i].state, cmd, [arg]);
-    return {
-      state: result.state,
-      output: JSON.parse(result.output)
-    };
-  };
-
-  var _makeResult = function(state, i, result) {
-    var newState = deepMerge(state);
-    newState[i].state = deepMerge(result.state);
-    return {
-      state : newState,
-      output: result.output.map(function(e) { return e[1]; })
-    };
-  };
-
   var _applyCh = function(state, i, cmd, arg) {
-    if (state.length == 0) {
+    if (state.channels.length == 0) {
       return {
         state : state,
         output: []
       };
     }
 
-    i = i % state.length;
-    return _makeResult(state, i, _tryCh(state, i, cmd, arg));
+    i = i % state.channels.length;
+    var args = (cmd == 'push' ? [arg] : []).concat(state.count + 1);
+    var result = state.channels[i].apply(state.states[i], cmd, args);
+    var newState = deepMerge(state, { count: state.count + 1 });
+    newState.states[i] = deepMerge(result.state);
+
+    return {
+      state : newState,
+      output: JSON.parse(result.output).map(function(e) { return e[1]; })
+    };
   };
 
-  var _cleanupChannelState = function(state, badPushers, badPullers) {
-    var pushers = state.pushers.filter(function(p) {
-      return badPushers.every(function(q) {
-        return p[0] != q[0] || p[1] != q[1];
-      });
-    });
-    var pullers = state.pullers.filter(function(p) {
-      return badPullers.every(function(q) {
-        return p != q;
-      });
-    });
-
-    var result = merge(state, {
-      pushers: pushers,
-      pullers: pullers
-    });
-
-    return result;
-  };
-
-  var _cleanupState = function(state, badPushers, badPullers) {
-    return state.map(function(entry, i) {
-      return {
-        channel: entry.channel,
-        state  : _cleanupChannelState(entry.state, badPushers[i], badPullers[i])
-      };
+  var startGroup = function(state) {
+    return merge(state, {
+      groups: state.groups.concat(state.count)
     });
   };
 
   var _transitions = {
     init: function(state, descriptors) {
+      var channels = descriptors.map(function(desc) {
+        return channelSpec.model(desc.type);
+      });
+      var states = descriptors.map(function(desc, i) {
+        return channels[i].apply(null, 'init', [desc.size]).state;
+      }); 
+
       return {
-        state: descriptors.map(function(desc) {
-          var channel = channelSpec.model(desc.type);
-          var state   = channel.apply(null, 'init', [desc.size]).state;
-          return {
-            channel: channel,
-            state  : state
-          };
-        })
+        state: {
+          channels: channels,
+          states  : states,
+          count   : 0,
+          groups  : []
+        }
       };
     },
     push: function(state, i, val) {
-      return _applyCh(state, i, 'push', val);
+      return _applyCh(startGroup(state), i, 'push', val);
     },
     pull: function(state, i) {
-      return _applyCh(state, i, 'pull');
+      return _applyCh(startGroup(state), i, 'pull');
     },
     close: function(state, i) {
       return _applyCh(state, i, 'close');
     },
     select: function(state, cmds, defaultVal) {
-      var pushers = state.map(function() { return []; });
-      var pullers = state.map(function() { return []; });
+      var nextCount = state.count + cmds.length;
+      var output;
 
-      if (state.length > 0) {
+      if (state.channels.length > 0 && cmds.length > 0) {
+        state = startGroup(state);
+
         for (var i = 0; i < cmds.length; ++i) {
-          var ch  = cmds[i].chan % state.length;
+          var ch  = cmds[i].chan % state.channels.length;
           var val = cmds[i].val;
           var cmd = val > 0 ? 'push' : 'pull';
           var res = _applyCh(state, ch, cmd, val);
 
+          state = res.state;
+
           if (res.output.length > 0) {
-            return {
-              state : _cleanupState(res.state, pushers, pullers),
-              output: [ch, last(res.output)]
-            };
-          } else {
-            state = res.state;
-            if (cmd == 'pull')
-              pullers[ch].push(last(state[ch].state.pullers));
-            else
-              pushers[ch].push(last(state[ch].state.pushers));
+            output = [ch, last(res.output)];
+            break;
           }
         }
       }
 
-      if (defaultVal > 0) {
-        return {
-          state : _cleanupState(state, pushers, pullers),
-          output: [-1, defaultVal]
-        };
-      } else {
-        return {
-          state: state,
-          output: []
-        };
+      if (output == null) {
+        if (defaultVal > 0)
+          output = [-1, defaultVal];
+        else
+          output = [];
       }
+
+      return {
+        state : merge(state, { count: nextCount }),
+        output: output
+      };
     }
   };
 
@@ -317,8 +286,25 @@ var model = function() {
 };
 
 
+var makeCounter = function(start) {
+  var _count = start || 0;
+
+  return {
+    get: function() {
+      return _count;
+    },
+    set: function(n) {
+      _count = n;
+    },
+    next: function() {
+      return ++_count;
+    }
+  };
+};
+
+
 var implementation = function() {
-  var _size, _channels;
+  var _counter, _size, _channels;
 
   var _postprocess = function(output) {
     return JSON.parse(output).map(function(e) { return e[1]; });
@@ -326,9 +312,10 @@ var implementation = function() {
 
   var _commands = {
     init: function(descriptors) {
+      _counter = makeCounter();
       _size = descriptors.length;
       _channels = descriptors.map(function(desc) {
-        var ch = channelSpec.implementation(desc.type);
+        var ch = channelSpec.implementation(desc.type, _counter);
         ch.apply('init', [desc.size]);
         return ch;
       });
@@ -352,6 +339,7 @@ var implementation = function() {
       return _postprocess(output);
     },
     select: function(cmds, defaultVal) {
+      var nextCount = _counter.get() + cmds.length;
       var args;
 
       if (_size > 0) {
@@ -368,6 +356,8 @@ var implementation = function() {
         options['default'] = defaultVal;
 
       var deferred = csp.select.apply(null, args.concat(options));
+
+      _counter.set(nextCount);
 
       if (deferred.isResolved()) {
         var result;

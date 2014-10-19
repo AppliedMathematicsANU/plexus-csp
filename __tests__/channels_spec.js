@@ -41,9 +41,9 @@ var model = function(type) {
         }
       };
     },
-    push: function(state, val) {
+    push: function(state, val, count) {
       var n = state.bsize;
-      var h = state.count + 1;
+      var h = count || state.count + 1;
       state = merge(state, { count: h });
 
       if (state.closed) {
@@ -76,8 +76,8 @@ var model = function(type) {
         };
       }
     },
-    pull: function(state) {
-      var h = state.count + 1;
+    pull: function(state, count) {
+      var h = count || state.count + 1;
       state = merge(state, { count: h });
 
       if (state.buffer.length > 0) {
