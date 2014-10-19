@@ -28,6 +28,13 @@ var SLIDING  = 2;
 
 
 var model = function(type) {
+  var _purgeCancelledOps = function(state) {
+    return merge(state, {
+      pullers: state.pullers.filter(function(p) { return !p[1].cancelled; }),
+      pushers: state.pushers.filter(function(p) { return !p[2].cancelled; })
+    });
+  };
+
   var _transitions = {
     init: function(state, arg) {
       return {
@@ -41,10 +48,10 @@ var model = function(type) {
         }
       };
     },
-    push: function(state, val) {
+    push: function(state, val, handler) {
       var n = state.bsize;
       var h = state.count + 1;
-      state = merge(state, { count: h });
+      state = merge(_purgeCancelledOps(state), { count: h });
 
       if (state.closed) {
         return {
@@ -54,7 +61,7 @@ var model = function(type) {
       } else if (state.pullers.length > 0) {
         return {
           state : merge(state, { pullers: state.pullers.slice(1) }),
-          output: [[state.pullers[0], val], [h, true]]
+          output: [[state.pullers[0][0], val], [h, true]]
         };
       } else if (n > state.buffer.length || (n > 0 && type != CHECKED)) {
         var b = state.buffer.slice();
@@ -71,14 +78,16 @@ var model = function(type) {
         };
       } else {
         return {
-          state : merge(state, { pushers: state.pushers.concat([[h, val]]) }),
+          state : merge(state, {
+            pushers: state.pushers.concat([[h, val, handler || {}]])
+          }),
           output: []
         };
       }
     },
-    pull: function(state) {
+    pull: function(state, handler) {
       var h = state.count + 1;
-      state = merge(state, { count: h });
+      state = merge(_purgeCancelledOps(state), { count: h });
 
       if (state.buffer.length > 0) {
         if (state.pushers.length > 0) {
@@ -109,12 +118,16 @@ var model = function(type) {
         };
       } else {
         return {
-          state : merge(state, { pullers: state.pullers.concat([h]) }),
+          state : merge(state, {
+            pullers: state.pullers.concat([[h, handler || {}]])
+          }),
           output: []
         };
       }
     },
     close: function(state) {
+      state = _purgeCancelledOps(state);
+
       return {
         state: merge(state, {
           pullers: [],
@@ -123,7 +136,7 @@ var model = function(type) {
         }),
         output: [].concat(
           state.pushers.map(function(p) { return [p[0], false]; }),
-          state.pullers.map(function(p) { return [p, undefined]; }))
+          state.pullers.map(function(p) { return [p[0], undefined]; }))
       };
     }
   };
