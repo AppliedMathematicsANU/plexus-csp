@@ -163,6 +163,17 @@ var model = function(type) {
 };
 
 
+var makeCounter = function(start) {
+  var _count = start || 0;
+
+  return {
+    next: function() {
+      return ++_count;
+    }
+  };
+};
+
+
 var handler = function(log, n, h) {
   var _isResolved = false;
 
@@ -184,7 +195,7 @@ var handler = function(log, n, h) {
 };
 
 
-var implementation = function(type) {
+var implementation = function(type, counter) {
   var Buffer = [csp.Buffer, csp.DroppingBuffer, csp.SlidingBuffer][type];
 
   return {
@@ -196,23 +207,25 @@ var implementation = function(type) {
       return JSON.stringify(this._log);
     },
 
+    makeHandler: function(h) {
+      return handler(this._log, this._counter.next(), h);
+    },
+
     requestPush: function(val, h) {
       this.clearLog();
-      this._count += 1;
-      this._channel.requestPush(val, handler(this._log, this._count, h));
+      this._channel.requestPush(val, this.makeHandler(h));
     },
 
     requestPull: function(h) {
       this.clearLog();
-      this._count += 1;
-      this._channel.requestPull(handler(this._log, this._count, h));
+      this._channel.requestPull(this.makeHandler(h));
     },
 
     apply: function(command, args) {
       try {
       if (command == 'init') {
         this._log = [];
-        this._count = 0;
+        this._counter = counter || makeCounter();
         this._channel = csp.chan(args[0] ? new Buffer(args[0]) : 0);
       } else {
         this.clearLog();
@@ -254,7 +267,6 @@ describe('a channel with a sliding buffer', function() {
 
 
 module.exports = {
-  merge         : merge,
   CHECKED       : CHECKED,
   DROPPING      : DROPPING,
   SLIDING       : SLIDING,
