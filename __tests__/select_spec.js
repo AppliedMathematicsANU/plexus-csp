@@ -58,10 +58,11 @@ var randomList = function(minLen, maxLen, randomElement) {
 var shrinkList = function(list, elementShrinker) {
   var result = [];
   var n = list.length;
-  var i, head, tail;
+  var m, i, head, tail;
 
-  for (i = 0; i < n; ++i)
-    result.push([].concat(list.slice(0, i), list.slice(i+1)));
+  for (m = n; m > 0; m >>= 1)
+    for (i = n-m; i >= 0; --i)
+      result.push([].concat(list.slice(0, i), list.slice(i+m)));
 
   for (i = 0; i < n; ++i) {
     head = list.slice(0, i);
