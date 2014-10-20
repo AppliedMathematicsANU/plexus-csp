@@ -102,6 +102,41 @@ var last = function(a) {
 
 
 var model = function() {
+  var _startGroup = function(state) {
+    return merge(state, {
+      groups: state.groups.concat(state.count)
+    });
+  };
+
+  var _cleanup = function(state, requestID) {
+    var groups = state.groups;
+    var i = groups.filter(function(n) { return n <= requestID; }).length;
+    var lo = groups[i-1];
+    var hi = i >= groups.length ? state.count : groups[i];
+
+    var test = function(p) {
+      return p[0] < lo || p[0] >= hi;
+    };
+
+    var states = state.states.map(function(s) {
+      return merge(s, {
+        pullers: s.pullers.filter(test),
+        pushers: s.pushers.filter(test)
+      });
+    });
+
+    return merge(state, { states: states });
+  };
+
+  var _cleanupAll = function(state, output) {
+    return output.reduce(
+      function(s, entry) {
+        return _cleanup(s, entry[0]);
+      },
+      state
+    );
+  };
+
   var _applyCh = function(state, i, cmd, arg) {
     if (state.channels.length == 0) {
       return {
@@ -111,21 +146,20 @@ var model = function() {
     }
 
     i = i % state.channels.length;
-    var args = (cmd == 'push' ? [arg] : []).concat(state.count + 1);
+    var args = (cmd == 'push' ? [arg] : []).concat(state.count);
     var result = state.channels[i].apply(state.states[i], cmd, args);
-    var newState = deepMerge(state, { count: state.count + 1 });
+
+    var output = JSON.parse(result.output);
+    var newCount = state.count + (cmd == 'close' ? 0 : 1);
+
+    var newState = deepMerge(state, { count: newCount });
     newState.states[i] = deepMerge(result.state);
+    newState = _cleanupAll(newState, output);
 
     return {
       state : newState,
-      output: JSON.parse(result.output).map(function(e) { return e[1]; })
+      output: output
     };
-  };
-
-  var startGroup = function(state) {
-    return merge(state, {
-      groups: state.groups.concat(state.count)
-    });
   };
 
   var _transitions = {
@@ -141,16 +175,16 @@ var model = function() {
         state: {
           channels: channels,
           states  : states,
-          count   : 0,
+          count   : 1,
           groups  : []
         }
       };
     },
     push: function(state, i, val) {
-      return _applyCh(startGroup(state), i, 'push', val);
+      return _applyCh(_startGroup(state), i, 'push', val);
     },
     pull: function(state, i) {
-      return _applyCh(startGroup(state), i, 'pull');
+      return _applyCh(_startGroup(state), i, 'pull');
     },
     close: function(state, i) {
       return _applyCh(state, i, 'close');
@@ -159,9 +193,9 @@ var model = function() {
       var nextCount = state.count + cmds.length;
       var output;
 
-      if (state.channels.length > 0 && cmds.length > 0) {
-        state = startGroup(state);
+      state = _startGroup(state);
 
+      if (state.channels.length > 0 && cmds.length > 0) {
         for (var i = 0; i < cmds.length; ++i) {
           var ch  = cmds[i].chan % state.channels.length;
           var val = cmds[i].val;
@@ -171,16 +205,17 @@ var model = function() {
           state = res.state;
 
           if (res.output.length > 0) {
-            output = [ch, last(res.output)];
+            output = [ch, res.output];
             break;
           }
         }
       }
 
       if (output == null) {
-        if (defaultVal > 0)
+        if (defaultVal > 0) {
+          state = _cleanup(state, nextCount);
           output = [-1, defaultVal];
-        else
+        } else
           output = [];
       }
 
@@ -307,7 +342,7 @@ var implementation = function() {
   var _counter, _size, _channels;
 
   var _postprocess = function(output) {
-    return JSON.parse(output).map(function(e) { return e[1]; });
+    return JSON.parse(output);
   };
 
   var _commands = {
@@ -368,7 +403,7 @@ var implementation = function() {
           else
             for (var i = 0; i < _size; ++i) {
               if (output.channel == _channels[i])
-                result = [i, output.value];
+                result = [i, JSON.parse(_channels[i].getLog())];
             }
         });
 

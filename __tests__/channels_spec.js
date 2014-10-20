@@ -54,7 +54,7 @@ var model = function(type) {
       } else if (state.pullers.length > 0) {
         return {
           state : merge(state, { pullers: state.pullers.slice(1) }),
-          output: [[state.pullers[0], val], [h, true]]
+          output: [[state.pullers[0][0], val], [h, true]]
         };
       } else if (n > state.buffer.length || (n > 0 && type != CHECKED)) {
         var b = state.buffer.slice();
@@ -109,7 +109,7 @@ var model = function(type) {
         };
       } else {
         return {
-          state : merge(state, { pullers: state.pullers.concat([h]) }),
+          state : merge(state, { pullers: state.pullers.concat([[h]]) }),
           output: []
         };
       }
@@ -123,7 +123,7 @@ var model = function(type) {
         }),
         output: [].concat(
           state.pushers.map(function(p) { return [p[0], false]; }),
-          state.pullers.map(function(p) { return [p, undefined]; }))
+          state.pullers.map(function(p) { return [p[0], undefined]; }))
       };
     }
   };
