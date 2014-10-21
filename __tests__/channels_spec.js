@@ -212,12 +212,10 @@ var implementation = function(type, counter) {
     },
 
     requestPush: function(val, h) {
-      this.clearLog();
       this._channel.requestPush(val, this.makeHandler(h));
     },
 
     requestPull: function(h) {
-      this.clearLog();
       this._channel.requestPull(this.makeHandler(h));
     },
 
@@ -237,7 +235,9 @@ var implementation = function(type, counter) {
         else
           this._channel.close();
 
-        return this.getLog();
+        var result = this.getLog();
+        this.clearLog();
+        return result;
       }
       } catch(ex) { console.error(ex.stack); }
     }

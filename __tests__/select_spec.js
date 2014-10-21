@@ -187,7 +187,37 @@ var model = function() {
       return _applyCh(_startGroup(state), i, 'pull');
     },
     close: function(state, i) {
-      return _applyCh(state, i, 'close');
+      if (state.channels.length == 0) {
+        return {
+          state : state,
+          output: []
+        };
+      }
+
+      i = i % state.channels.length;
+
+      var output = [];
+
+      while (state.states[i].pullers.length > 0) {
+        var id = state.states[i].pullers[0][0];
+        state = _cleanup(state, id);
+        output.push([id, undefined]);
+      }
+      while (state.states[i].pushers.length > 0) {
+        var id = state.states[i].pushers[0][0];
+        state = _cleanup(state, id);
+        output.push([id, false]);
+      }
+
+      state = deepMerge(state);
+      state.states[i] = merge(state.states[i], {
+        closed: true
+      });
+
+      return {
+        state : state,
+        output: output
+      };
     },
     select: function(state, cmds, defaultVal) {
       var nextCount = state.count + cmds.length;
@@ -402,8 +432,12 @@ var implementation = function() {
             result = [-1, output.value];
           else
             for (var i = 0; i < _size; ++i) {
-              if (output.channel == _channels[i])
-                result = [i, JSON.parse(_channels[i].getLog())];
+              if (output.channel == _channels[i]) {
+                var log = _channels[i].getLog();
+                _channels[i].clearLog();
+                result = [i, JSON.parse(log)];
+                break;
+              }
             }
         });
 
