@@ -1,5 +1,8 @@
 'use strict';
 
+jest.dontMock('immutable');
+var I = require('immutable');
+
 jest.dontMock('comfychair/jasmine');
 jest.dontMock('comfychair');
 jest.dontMock('../dist/index');
@@ -77,17 +80,13 @@ var shrinkList = function(list, elementShrinker) {
 
 
 var shrinkObject = function(obj, shrinkers) {
-  var result = [];
+  var tmp = I.fromJS(obj);
 
-  for (var k in obj) {
-    shrinkers[k](obj[k]).forEach(function(x) {
-      var tmp = deepMerge(obj);
-      tmp[k] = x;
-      result.push(tmp);
+  return tmp.keySeq().flatMap(function(k) {
+    return shrinkers[k](obj[k]).map(function(x) {
+      return tmp.set(k, x);
     });
-  }
-
-  return result;
+  }).toJS();
 };
 
 
@@ -377,6 +376,7 @@ var implementation = function() {
 
   var _commands = {
     init: function(descriptors) {
+      throw 'oops!';
       _counter = makeCounter();
       _size = descriptors.length;
       _channels = descriptors.map(function(desc) {
