@@ -233,7 +233,7 @@ var implementation = function(type, counter) {
         else if (command == 'pull')
           this.requestPull();
         else
-          this._channel.close();
+          csp.close(this._channel);
 
         var result = this.getLog();
         this.clearLog();

@@ -44,5 +44,5 @@ csp.top(csp.go(function*() {
   for (i = 0; i < 10; ++i)
     console.log(yield csp.pull(ch));
 
-  ch.close();
+  csp.close(ch);
 }));

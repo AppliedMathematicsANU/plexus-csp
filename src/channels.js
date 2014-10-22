@@ -4,86 +4,78 @@ var cc = require('./core');
 var cb = require('./buffers');
 
 
-function Channel(buffer) {
-  this.buffer   = buffer;
-  this.pending  = cb.impl.RingBuffer(1);
-  this.data     = cb.impl.RingBuffer(1);
-  this.pressure = 0;
-  this.isClosed = false;
-};
-
 var MAX_PENDING = 8192;
 
-Channel.prototype.addPending = function(client, val) {
-  if (this.pending.isFull()) {
-    if (this.pending.capacity() >= MAX_PENDING)
+var addPending = function(ch, client, val) {
+  if (ch.pending.isFull()) {
+    if (ch.pending.capacity() >= MAX_PENDING)
       return false;
-    this.pending.resize(
-      Math.min(MAX_PENDING, Math.ceil(this.pending.capacity() * 1.5)));
+    ch.pending.resize(
+      Math.min(MAX_PENDING, Math.ceil(ch.pending.capacity() * 1.5)));
   }
-  this.pending.write(client);
+  ch.pending.write(client);
 
   if (val !== undefined) {
-    if (this.data.isFull())
-      this.data.resize(Math.ceil(this.data.capacity() * 1.5));
-    this.data.write(val);
+    if (ch.data.isFull())
+      ch.data.resize(Math.ceil(ch.data.capacity() * 1.5));
+    ch.data.write(val);
   }
 
   return true;
 };
 
-Channel.prototype.pushBuffer = function(val) {
-  return this.buffer ? this.buffer.push(val) : false;
+var pushBuffer = function(ch, val) {
+  return ch.buffer ? ch.buffer.push(val) : false;
 };
 
-Channel.prototype.pullBuffer = function() {
-  if (this.buffer)
-    return this.buffer.pull()[0];
+var pullBuffer = function(ch) {
+  if (ch.buffer)
+    return ch.buffer.pull()[0];
 };
 
-Channel.prototype.tryPush = function(val) {
+var tryPush = function(ch, val) {
   var client;
 
-  while (this.pressure < 0) {
-    client = this.pending.read();
-    ++this.pressure;
+  while (ch.pressure < 0) {
+    client = ch.pending.read();
+    ++ch.pressure;
     if (!client.isResolved()) {
       client.resolve(val);
       return true;
     }
   }
 
-  return this.pushBuffer(val);
+  return pushBuffer(ch, val);
 };
 
-Channel.prototype.requestPush = function(val, client) {
+var requestPush = function(ch, val, client) {
   if (client.isResolved())
     return;
 
   if (val === undefined)
     client.reject(new Error("push() requires an value"));
-  else if (this.isClosed)
+  else if (ch.isClosed)
     client.resolve(false);
-  else if (this.tryPush(val))
+  else if (tryPush(ch, val))
     client.resolve(true);
-  else if (!this.addPending(client, val))
+  else if (!addPending(ch, client, val))
     client.reject(new Error("channel queue overflow"));
   else
-    ++this.pressure;
+    ++ch.pressure;
 };
 
-Channel.prototype.tryPull = function() {
+var tryPull = function(ch) {
   var client, val, pulled;
 
-  while (this.pressure > 0) {
-    client = this.pending.read();
-    val    = this.data.read();
-    --this.pressure;
+  while (ch.pressure > 0) {
+    client = ch.pending.read();
+    val    = ch.data.read();
+    --ch.pressure;
 
     if (!client.isResolved()) {
-      pulled = this.pullBuffer();
+      pulled = pullBuffer(ch);
       if (pulled !== undefined) {
-        this.pushBuffer(val);
+        pushBuffer(ch, val);
         val = pulled;
       }
       client.resolve(true);
@@ -91,38 +83,53 @@ Channel.prototype.tryPull = function() {
     }
   }
 
-  return this.pullBuffer();
+  return pullBuffer(ch);
 };
 
-Channel.prototype.requestPull = function(client) {
+var requestPull = function(ch, client) {
   if (client.isResolved())
     return;
 
-  var res = this.tryPull();
+  var res = tryPull(ch);
   if (res !== undefined)
     client.resolve(res);
-  else if (this.isClosed)
+  else if (ch.isClosed)
     client.resolve();
-  else if (!this.addPending(client))
+  else if (!addPending(ch, client))
     client.reject(new Error("channel queue overflow"));
   else
-    --this.pressure;
+    --ch.pressure;
 };
 
-Channel.prototype.close = function() {
-  var val = this.pressure < 0 ? undefined : false;
+var close = function(ch) {
+  var val = ch.pressure < 0 ? undefined : false;
   var client;
 
-  while (this.pending && !this.pending.isEmpty()) {
-    client = this.pending.read();
+  while (ch.pending && !ch.pending.isEmpty()) {
+    client = ch.pending.read();
     if (!client.isResolved())
       client.resolve(val);
   }
 
-  this.pending = null;
-  this.data = null;
-  this.pressure = 0;
-  this.isClosed = true;
+  ch.pending = null;
+  ch.data = null;
+  ch.pressure = 0;
+  ch.isClosed = true;
+};
+
+
+var Channel = function Channel(internals) {
+  this.requestPush = function(val, client) {
+    requestPush(internals, val, client);
+  };
+
+  this.requestPull = function(client) {
+    requestPull(internals, client);
+  };
+
+  this.close = function() {
+    close(internals);
+  };
 };
 
 
@@ -132,7 +139,14 @@ exports.chan = function(arg) {
     buffer = arg;
   else if (arg)
     buffer = cb.Buffer(arg);
-  return new Channel(buffer);
+
+  return new Channel({
+    buffer  : buffer,
+    pending : cb.impl.RingBuffer(1),
+    data    : cb.impl.RingBuffer(1),
+    pressure: 0,
+    isClosed: false
+  });
 };
 
 exports.push = function(ch, val) {
