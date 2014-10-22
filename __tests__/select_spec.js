@@ -376,7 +376,6 @@ var implementation = function() {
 
   var _commands = {
     init: function(descriptors) {
-      throw 'oops!';
       _counter = makeCounter();
       _size = descriptors.length;
       _channels = descriptors.map(function(desc) {
