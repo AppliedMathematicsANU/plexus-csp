@@ -7,7 +7,7 @@ var defer      = require('./defer');
 
 
 var scheduler = function(size) {
-  var queue = new RingBuffer(size || 100);
+  var queue = RingBuffer(size || 100);
   var scheduleFlush = true;
 
   var flush = function() {

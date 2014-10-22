@@ -6,8 +6,8 @@ var cb = require('./buffers');
 
 function Channel(buffer) {
   this.buffer   = buffer;
-  this.pending  = new cb.impl.RingBuffer(1);
-  this.data     = new cb.impl.RingBuffer(1);
+  this.pending  = cb.impl.RingBuffer(1);
+  this.data     = cb.impl.RingBuffer(1);
   this.pressure = 0;
   this.isClosed = false;
 };
@@ -131,7 +131,7 @@ exports.chan = function(arg) {
   if (typeof arg == "object")
     buffer = arg;
   else if (arg)
-    buffer = new cb.Buffer(arg);
+    buffer = cb.Buffer(arg);
   return new Channel(buffer);
 };
 

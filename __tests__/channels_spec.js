@@ -224,7 +224,7 @@ var implementation = function(type, counter) {
       if (command == 'init') {
         this._log = [];
         this._counter = counter || makeCounter();
-        this._channel = csp.chan(args[0] ? new Buffer(args[0]) : 0);
+        this._channel = csp.chan(args[0] ? Buffer(args[0]) : 0);
       } else {
         this.clearLog();
 
