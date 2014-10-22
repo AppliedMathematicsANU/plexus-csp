@@ -48,7 +48,7 @@ Channel.prototype.tryPush = function(val) {
     client = this.pending.read();
     ++this.pressure;
     if (!client.isResolved()) {
-      client.resolve(this.pushBuffer(val) ? this.pullBuffer() : val);
+      client.resolve(val);
       return true;
     }
   }
