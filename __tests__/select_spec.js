@@ -219,6 +219,7 @@ var model = function() {
       };
     },
     select: function(state, cmds, defaultVal) {
+      var lastCount = state.count;
       var nextCount = state.count + cmds.length;
       var output;
 
@@ -234,7 +235,10 @@ var model = function() {
           state = res.state;
 
           if (res.output.length > 0) {
-            output = [ch, res.output];
+            var result = res.output.filter(function(e) {
+              return e[0] >= lastCount;
+            })[0][1];
+            output = [ch, result, res.output];
             break;
           }
         }
@@ -434,7 +438,7 @@ var implementation = function() {
               if (output.channel == _channels[i]) {
                 var log = _channels[i].getLog();
                 _channels[i].clearLog();
-                result = [i, JSON.parse(log)];
+                result = [i, output.value, JSON.parse(log)];
                 break;
               }
             }
