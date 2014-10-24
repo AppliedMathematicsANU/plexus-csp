@@ -34,6 +34,12 @@
     "immutable": "~2.5.0"
   },
   "jest": {
+    "testPathDirs": [
+      "__tests__"
+    ],
+    "testPathIgnorePatterns": [
+      "helpers.js"
+    ],
     "scriptPreprocessor": "jest-preprocessor.js",
     "testFileExtensions": [
       "es6",
