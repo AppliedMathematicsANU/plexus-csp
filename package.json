@@ -42,7 +42,6 @@
     ],
     "scriptPreprocessor": "jest-preprocessor.js",
     "testFileExtensions": [
-      "es6",
       "js"
     ]
   },
