@@ -6,23 +6,42 @@ jest.dontMock('../dist/index');
 var csp = require('../dist/index');
 
 
-var checkOnResolve = function(deferred, expected) {
-  var resolvedWith = null;
+var customMatchers = {
+  toResolve: function() {
+    var value;
 
-  deferred.then(function(val) { resolvedWith = val; },
-                function() {});
+    this.actual.then(function(val) { value = val; },
+                     function() {});
 
-  expect(resolvedWith).toEqual(expected);
+    return value !== undefined;
+  },
+  toResolveAs: function(expected) {
+    var value;
+
+    this.actual.then(function(val) { value = val; },
+                     function() {});
+
+    return value === expected;
+  },
+  toBeRejected: function() {
+    var value;
+
+    this.actual.then(function() {},
+                     function(msg) { value = msg; });
+
+    return value !== undefined;
+  },
+  toBeRejectedWith: function(expected) {
+    var value;
+
+    this.actual.then(function() {},
+                     function(msg) { value = msg; });
+
+    return value === expected;
+  }
 };
 
-var checkOnRejected = function(deferred, expected) {
-  var rejectedWith = null;
-
-  deferred.then(function() {},
-                function(msg) { rejectedWith = msg; });
-
-  expect(rejectedWith).toEqual(expected);
-};
+beforeEach(function() { this.addMatchers(customMatchers); });
 
 
 describe('a deferred', function() {
@@ -46,11 +65,11 @@ describe('a deferred', function() {
     });
 
     it('does not call its onResolve function', function() {
-      checkOnResolve(deferred, null);
+      expect(deferred).not.toResolve();
     });
 
     it('does not call its onReject function', function() {
-      checkOnRejected(deferred, null);
+      expect(deferred).not.toBeRejected();
     });
   });
 
@@ -74,11 +93,11 @@ describe('a deferred', function() {
     });
 
     it('calls its onResolve function', function() {
-      checkOnResolve(deferred, val);
+      expect(deferred).toResolveAs(val);
     });
 
     it('does not call its onReject function', function() {
-      checkOnRejected(deferred, null);
+      expect(deferred).not.toBeRejected();
     });
   });
 
@@ -102,11 +121,11 @@ describe('a deferred', function() {
     });
 
     it('does not call its onResolve function', function() {
-      checkOnResolve(deferred, null);
+      expect(deferred).not.toResolve();
     });
 
     it('calls its onReject function', function() {
-      checkOnRejected(deferred, msg);
+      expect(deferred).toBeRejectedWith(msg);
     });
   });
 
