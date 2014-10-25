@@ -34,18 +34,6 @@
     "immutable": "~2.5.0",
     "jasmine-node": "~1.14.5"
   },
-  "jest": {
-    "testPathDirs": [
-      "__tests__"
-    ],
-    "testPathIgnorePatterns": [
-      "helpers.js"
-    ],
-    "scriptPreprocessor": "jest-preprocessor.js",
-    "testFileExtensions": [
-      "js"
-    ]
-  },
   "scripts": {
     "prepublish": "webpack -p",
     "test": "./test.sh"
