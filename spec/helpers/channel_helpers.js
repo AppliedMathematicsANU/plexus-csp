@@ -221,8 +221,6 @@ var implementation = function(type, counter) {
         this._counter = counter || makeCounter();
         this._channel = csp.chan(args[0] ? Buffer(args[0]) : 0);
       } else {
-        this.clearLog();
-
         if (command == 'push')
           this.requestPush(args[0]);
         else if (command == 'pull')
