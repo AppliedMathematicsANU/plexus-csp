@@ -6,7 +6,7 @@ var comfy = require('comfychair');
 
 var I = require('immutable');
 var csp = require('../dist/index');
-var channelSpec = require('./channels_spec');
+var channelHelpers = require('./helpers/channel_helpers');
 
 
 var isObject = function(obj) {
@@ -159,7 +159,7 @@ var model = function() {
   var _transitions = {
     init: function(state, descriptors) {
       var channels = descriptors.map(function(desc) {
-        return channelSpec.model(desc.type);
+        return channelHelpers.model(desc.type);
       });
       var states = descriptors.map(function(desc, i) {
         return channels[i].apply(null, 'init', [desc.size]).state;
@@ -378,7 +378,7 @@ var implementation = function() {
       _counter = makeCounter();
       _size = descriptors.length;
       _channels = descriptors.map(function(desc) {
-        var ch = channelSpec.implementation(desc.type, _counter);
+        var ch = channelHelpers.implementation(desc.type, _counter);
         ch.apply('init', [desc.size]);
         return ch;
       });
