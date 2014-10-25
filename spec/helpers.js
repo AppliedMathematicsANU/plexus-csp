@@ -1,8 +1,6 @@
 'use strict';
 
 
-jest.dontMock('../dist/index');
-
 var csp = require('../dist/index');
 
 

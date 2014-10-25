@@ -1,9 +1,6 @@
 'use strict';
 
 
-jest.dontMock('./helpers');
-jest.dontMock('../dist/index');
-
 require('./helpers');
 var csp = require('../dist/index');
 

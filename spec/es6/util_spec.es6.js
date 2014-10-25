@@ -1,8 +1,7 @@
 'use strict';
 
-jest.dontMock('../dist/index');
 
-var csp = require('../dist/index');
+var csp = require('../../dist/index');
 
 var t = function(val) {
   var out = csp.defer();

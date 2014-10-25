@@ -1,15 +1,10 @@
 'use strict';
 
-jest.dontMock('immutable');
-var I = require('immutable');
-
-jest.dontMock('comfychair/jasmine');
-jest.dontMock('comfychair');
-jest.dontMock('../dist/index');
-jest.dontMock('./channels_spec');
 
 require('comfychair/jasmine');
 var comfy = require('comfychair');
+
+var I = require('immutable');
 var csp = require('../dist/index');
 var channelSpec = require('./channels_spec');
 
