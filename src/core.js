@@ -6,8 +6,8 @@ var RingBuffer = require('./buffers').impl.RingBuffer;
 var defer      = require('./defer');
 
 
-var scheduler = function(size) {
-  var queue = RingBuffer(size || 100);
+var scheduler = function() {
+  var queue = RingBuffer(64, 65536);
   var scheduleFlush = true;
 
   var flush = function() {
@@ -17,8 +17,6 @@ var scheduler = function(size) {
   };
 
   return function(thunk) {
-    if (queue.isFull())
-      queue.resize(Math.floor(queue.capacity() * 1.5));
     queue.write(thunk);
     if (scheduleFlush) {
       setImmediate(flush);

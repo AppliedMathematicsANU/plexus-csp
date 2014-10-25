@@ -1,14 +1,15 @@
 'use strict';
 
 
-function RingBuffer(size) {
+function RingBuffer(size, limit) {
   var size = size;
+  var limit = limit || size;
   var data_start = 0;
   var data_count = 0;
   var data = new Array(size);
 
   function capacity() {
-    return size;
+    return limit;
   };
 
   function count() {
@@ -20,10 +21,13 @@ function RingBuffer(size) {
   };
 
   function isFull() {
-    return data_count == size;
+    return data_count == limit;
   };
 
   function write(val) {
+    if (data_count == size || size < limit)
+      _resize(Math.min(limit, Math.max(1, Math.ceil(size * 1.5))));
+
     var pos = (data_start + data_count) % size;
     data[pos] = val;
     if (data_count < size)
@@ -41,7 +45,7 @@ function RingBuffer(size) {
     }
   };
 
-  function resize(n) {
+  function _resize(n) {
     var new_data = new Array(n);
     if (n < data_count) {
       var base = data_start + data_count - n;
@@ -55,6 +59,12 @@ function RingBuffer(size) {
     data_start = 0;
     data_count = Math.min(data_count, size);
     data = new_data;
+  };
+
+  function resize(n) {
+    if (n < size)
+      _resize(n);
+    limit = n;
   };
 
   return {

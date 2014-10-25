@@ -8,20 +8,13 @@ var MAX_PENDING = 8192;
 
 var addPending = function(ch, client, val) {
   if (ch.pending.isFull()) {
-    if (ch.pending.capacity() >= MAX_PENDING)
-      return false;
-    ch.pending.resize(
-      Math.min(MAX_PENDING, Math.ceil(ch.pending.capacity() * 1.5)));
+    return false;
+  } else {
+    ch.pending.write(client);
+    if (val !== undefined)
+      ch.data.write(val);
+    return true;
   }
-  ch.pending.write(client);
-
-  if (val !== undefined) {
-    if (ch.data.isFull())
-      ch.data.resize(Math.ceil(ch.data.capacity() * 1.5));
-    ch.data.write(val);
-  }
-
-  return true;
 };
 
 var pushBuffer = function(ch, val) {
@@ -142,8 +135,8 @@ exports.chan = function(arg) {
 
   return new Channel({
     buffer  : buffer,
-    pending : cb.impl.RingBuffer(1),
-    data    : cb.impl.RingBuffer(1),
+    pending : cb.impl.RingBuffer(32, MAX_PENDING),
+    data    : cb.impl.RingBuffer(32, MAX_PENDING),
     pressure: 0,
     isClosed: false
   });
