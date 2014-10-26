@@ -1,5 +1,6 @@
 'use strict';
 
+var defer = require('./defer');
 var cc = require('./core');
 var cb = require('./buffers');
 
@@ -143,13 +144,13 @@ exports.chan = function(arg) {
 };
 
 exports.push = function(ch, val) {
-  var a = cc.defer();
+  var a = defer();
   ch.requestPush(val, a);
   return a;
 };
 
 exports.pull = function(ch) {
-  var a = cc.defer();
+  var a = defer();
   ch.requestPull(a);
   return a;
 };
@@ -193,7 +194,7 @@ var delegate = function(channel, result) {
 exports.select = function() {
   var args    = Array.prototype.slice.call(arguments);
   var options = isObject(args[args.length - 1]) ? args.pop() : {};
-  var result  = cc.defer();
+  var result  = defer();
   var i, op;
 
   if (!options.priority)

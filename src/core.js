@@ -30,14 +30,13 @@ var enqueue = scheduler();
 
 var csp = module.exports = {};
 
-csp.defer = defer;
 csp.longStackSupport = false;
 
 
 csp.go = function(generator) {
   var args    = Array.prototype.slice.call(arguments, 1);
   var gen     = generator.apply(undefined, args);
-  var result  = csp.defer();
+  var result  = defer();
   var succeed = function(val) { enqueue(function() { use(val, true); }); };
   var fail    = function(val) { enqueue(function() { use(val, false); }); };
   var context = csp.longStackSupport ? new Error() : null;

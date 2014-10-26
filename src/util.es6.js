@@ -1,5 +1,6 @@
 'use strict';
 
+var defer = require('./defer');
 var cc = require('./core');
 
 
@@ -56,7 +57,7 @@ var chain = function(initial) {
 
 
 var sleep = function(ms) {
-  var result = cc.defer();
+  var result = defer();
   var t = setTimeout(function() {
     clearTimeout(t);
     result.resolve();
@@ -80,7 +81,7 @@ var nbind = function(fn, context) {
 
   return function() {
     var args = Array.prototype.slice.call(arguments);
-    var result = cc.defer();
+    var result = defer();
 
     fn.apply(context, boundArgs.concat(args, ncallback(result)));
 
