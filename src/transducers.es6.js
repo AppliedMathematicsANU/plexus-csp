@@ -9,27 +9,36 @@ var channelReducer = function(ch) {
     init: function() {
       return ch;
     },
-    result: function(ch) {
-      return ch;
+    result: function(t) {
+      return t;
     },
-    step: function(ch, val) {
+    step: function(t, val) {
       return core.go(function*() {
+        t = yield t;
         val = yield val;
         if (val !== undefined)
-          yield ch.push(val);
-        return ch;
+          return yield ch.push(val);
       });
     }
   };
 };
 
 
-module.exports = function(xform, buf) {
+module.exports = function(xform, buf, isReduced, deref) {
   var ch = chan.chan(buf);
   var xf = xform(channelReducer(ch));
+  xf.init();
 
   return {
     push: function(val, handler) {
+      return core.go(function*() {
+        var val = yield xf.step(1, val);
+        if (isReduced(val)) {
+          yield xf.result(yield deref(val));
+          ch.close();
+        };
+        return true;
+      });
     },
 
     pull: function(handler) {

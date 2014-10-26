@@ -8,6 +8,7 @@ var extend = function(obj, other) {
 var csp = module.exports = require('./core');
 
 csp.defer = require('./defer');
+csp.tchan = require('./transducers');
 
 ['buffers', 'core', 'util', 'channels', 'channelUtil']
   .forEach(function(name) {
