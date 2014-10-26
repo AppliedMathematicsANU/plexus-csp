@@ -31,7 +31,8 @@
     "kew": "~0.3.4",
     "comfychair": "~0.0.2",
     "immutable": "~2.5.0",
-    "jasmine-node": "~1.14.5"
+    "jasmine-node": "~1.14.5",
+    "transducers.js": "~0.2.3"
   },
   "scripts": {
     "prepublish": "webpack -p",
