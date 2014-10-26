@@ -32,9 +32,9 @@ module.exports = function(xform, buf, isReduced, deref) {
   return {
     push: function(val, handler) {
       return core.go(function*() {
-        var val = yield xf.step(1, val);
+        var result = yield xf.step(1, val);
         if (isReduced(val)) {
-          yield xf.result(yield deref(val));
+          yield xf.result(yield deref(result));
           ch.close();
         };
         return true;
