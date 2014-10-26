@@ -131,12 +131,12 @@ var Channel = function Channel(internals) {
 };
 
 
-exports.chan = function(arg) {
+exports.chan = function(buf) {
   var buffer;
-  if (typeof arg == "object")
-    buffer = arg;
-  else if (arg)
-    buffer = cb.Buffer(arg);
+  if (typeof buf == "object")
+    buffer = buf;
+  else if (buf)
+    buffer = cb.Buffer(buf);
 
   return new Channel({
     buffer  : buffer,
