@@ -113,12 +113,16 @@ var close = function(ch) {
 
 
 var Channel = function Channel(internals) {
-  this.requestPush = function(val, client) {
-    requestPush(internals, val, client);
+  this.push = function(val, client) {
+    var handler = client || defer();
+    requestPush(internals, val, handler);
+    return handler;
   };
 
-  this.requestPull = function(client) {
-    requestPull(internals, client);
+  this.pull = function(client) {
+    var handler = client || defer();
+    requestPull(internals, handler);
+    return handler;
   };
 
   this.close = function() {
@@ -144,15 +148,11 @@ exports.chan = function(arg) {
 };
 
 exports.push = function(ch, val) {
-  var a = defer();
-  ch.requestPush(val, a);
-  return a;
+  return ch.push(val);
 };
 
 exports.pull = function(ch) {
-  var a = defer();
-  ch.requestPull(a);
-  return a;
+  return ch.pull();
 };
 
 exports.close = function(ch) {
@@ -205,9 +205,9 @@ exports.select = function() {
     if (op == null)
       continue;
     else if (Array.isArray(op))
-      op[0].requestPush(op[1], delegate(op[0], result));
+      op[0].push(op[1], delegate(op[0], result));
     else
-      op.requestPull(delegate(op, result));
+      op.pull(delegate(op, result));
   }
 
   if (options.hasOwnProperty('default') && !result.isResolved())

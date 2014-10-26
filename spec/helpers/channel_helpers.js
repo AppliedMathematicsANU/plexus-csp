@@ -206,12 +206,12 @@ var implementation = function(type, counter) {
       return handler(this._log, this._counter.next(), h);
     },
 
-    requestPush: function(val, h) {
-      this._channel.requestPush(val, this.makeHandler(h));
+    push: function(val, h) {
+      this._channel.push(val, this.makeHandler(h));
     },
 
-    requestPull: function(h) {
-      this._channel.requestPull(this.makeHandler(h));
+    pull: function(h) {
+      this._channel.pull(this.makeHandler(h));
     },
 
     apply: function(command, args) {
@@ -222,9 +222,9 @@ var implementation = function(type, counter) {
         this._channel = csp.chan(args[0] ? Buffer(args[0]) : 0);
       } else {
         if (command == 'push')
-          this.requestPush(args[0]);
+          this.push(args[0]);
         else if (command == 'pull')
-          this.requestPull();
+          this.pull();
         else
           csp.close(this._channel);
 
