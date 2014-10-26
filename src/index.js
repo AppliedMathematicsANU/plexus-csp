@@ -5,11 +5,11 @@ var extend = function(obj, other) {
     obj[p] = other[p];
 };
 
-module.exports = {
-  defer: require('./defer')
-};
+var csp = module.exports = require('./core');
+
+csp.defer = require('./defer');
 
 ['buffers', 'core', 'util', 'channels', 'channelUtil']
   .forEach(function(name) {
-    extend(module.exports, require('./'+name));
+    extend(csp, require('./'+name));
   });
