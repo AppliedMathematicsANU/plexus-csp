@@ -3,13 +3,21 @@
 var core = require('./core');
 
 
-function isReduced(x) {
+var isReduced = function(x) {
   return x && x.__transducers_reduced__;
-}
+};
 
-function deref(x) {
+var deref = function(x) {
   return x.value;
-}
+};
+
+var forward = function(from, to) {
+  from.then(
+    function(val) { to.resolve(val); },
+    function(err) { to.reject(err); }
+  );
+  return to;
+};
 
 
 var channelReducer = function(ch) {
@@ -39,18 +47,20 @@ module.exports = function(ch, xform) {
 
   return {
     push: function(val, handler) {
-      return core.go(function*() {
+      var deferred = core.go(function*() {
+        var success = open;
         if (open) {
           var result = yield xf.step(null, val);
           if (isReduced(result)) {
-            yield deref(yield xf.result(yield deref(result)));
             open = false;
+            yield deref(yield xf.result(yield deref(result)));
             ch.close();
           };
-          return true;
-        } else
-          return false;
+        }
+        return success;
       });
+
+      return handler ? forward(deferred, handler) : deferred;
     },
 
     pull: function(handler) {
@@ -58,9 +68,9 @@ module.exports = function(ch, xform) {
     },
 
     close: function() {
+      open = false;
       core.top(core.go(function*() {
         yield deref(yield xf.result());
-        open = false;
         ch.close();
       }));
     }
