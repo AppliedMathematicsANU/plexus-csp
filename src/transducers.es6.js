@@ -4,6 +4,15 @@ var core = require('./core');
 var chan = require('./channels');
 
 
+function isReduced(x) {
+  return x && x.__transducers_reduced__;
+}
+
+function deref(x) {
+  return x.value;
+}
+
+
 var channelReducer = function(ch) {
   return {
     init: function() {
@@ -24,7 +33,7 @@ var channelReducer = function(ch) {
 };
 
 
-module.exports = function(xform, buf, isReduced, deref) {
+module.exports = function(xform, buf) {
   var ch = chan.chan(buf);
   var open = true;
   var xf = xform(channelReducer(ch));
