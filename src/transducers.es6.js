@@ -33,8 +33,8 @@ module.exports = function(xform, buf, isReduced, deref) {
     push: function(val, handler) {
       return core.go(function*() {
         var result = yield xf.step(1, val);
-        if (isReduced(val)) {
-          yield xf.result(yield deref(result));
+        if (isReduced(result)) {
+          yield xf.result();
           ch.close();
         };
         return true;
@@ -46,7 +46,10 @@ module.exports = function(xform, buf, isReduced, deref) {
     },
 
     close: function() {
-      ch.close();
+      core.go(function*() {
+        yield xf.result();
+        ch.close();
+      });
     }
   };
 };
