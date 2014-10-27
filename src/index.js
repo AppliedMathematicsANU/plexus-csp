@@ -10,7 +10,8 @@ var csp = module.exports = require('./core');
 csp.defer = require('./defer');
 csp.tchan = require('./transducers');
 
-['buffers', 'core', 'util', 'channels', 'channelUtil']
-  .forEach(function(name) {
-    extend(csp, require('./'+name));
-  });
+extend(csp, require('./buffers'));
+extend(csp, require('./core'));
+extend(csp, require('./util'));
+extend(csp, require('./channels'));
+extend(csp, require('./channelUtil'));
