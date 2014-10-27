@@ -9,7 +9,9 @@ csp.longStackSupport = true;
 var xf = t.compose(
   t.map(function(x) { return x * 3; }),
   t.filter(function(x) { return x % 2 == 0; }),
-  t.take(2)
+  t.mapcat(function(x) { return [x, x]; }),
+  t.take(5),
+  t.partitionBy(function(x) { return x; })
 );
 
 function isReduced(x) {
@@ -35,4 +37,4 @@ csp.top(csp.go(function*() {
 }));
 
 
-console.log('expected: '+t.seq([0,1,2,3,4], xf)); 
+console.log('expected: '+JSON.stringify(t.seq([0,1,2,3,4], xf))); 
