@@ -9,19 +9,15 @@ var channelReducer = function(ch) {
     init: function() {
       return true;
     },
-    result: function(open) {
-      return open;
+    result: function(t) {
+      return t;
     },
-    step: function(open, val) {
+    step: function(t, val) {
       return core.go(function*() {
-        var success;
-
-        open = yield open;
+        t = yield t;
         val = yield val;
         if (val !== undefined)
           return yield ch.push(val);
-        else
-          return open;
       });
     }
   };
@@ -30,19 +26,23 @@ var channelReducer = function(ch) {
 
 module.exports = function(xform, buf, isReduced, deref) {
   var ch = chan.chan(buf);
+  var open = true;
   var xf = xform(channelReducer(ch));
-  var open = xf.init();
+  xf.init();
 
   return {
     push: function(val, handler) {
       return core.go(function*() {
-        open = yield xf.step(open, val);
-        if (isReduced(open)) {
-          yield xf.result(yield deref(open));
-          open = false;
-          ch.close();
-        };
-        return open;
+        if (open) {
+          var result = yield xf.step(null, val);
+          if (isReduced(result)) {
+            yield deref(yield xf.result(yield deref(result)));
+            open = false;
+            ch.close();
+          };
+          return true;
+        } else
+          return false;
       });
     },
 
@@ -51,11 +51,11 @@ module.exports = function(xform, buf, isReduced, deref) {
     },
 
     close: function() {
-      core.go(function*() {
-        yield xf.result(open);
+      core.top(core.go(function*() {
+        yield deref(yield xf.result());
         open = false;
         ch.close();
-      });
+      }));
     }
   };
 };
