@@ -14,16 +14,7 @@ var xf = t.compose(
   //t.partitionBy(function(x) { return x; })
 );
 
-function isReduced(x) {
-  return (x instanceof t.Reduced) || (x && x.__transducers_reduced__);
-}
-
-function deref(x) {
-  return x.value;
-}
-
-
-var ch = csp.tchan(xf, 1, isReduced, deref);
+var ch = csp.chan(null, xf);
 
 csp.top(csp.go(function*() {
   var i, r;
