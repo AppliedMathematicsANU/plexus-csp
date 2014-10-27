@@ -8,7 +8,6 @@ var extend = function(obj, other) {
 var csp = module.exports = require('./core');
 
 csp.defer = require('./defer');
-csp.tchan = require('./transducers');
 
 extend(csp, require('./buffers'));
 extend(csp, require('./core'));

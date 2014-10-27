@@ -1,8 +1,8 @@
 'use strict';
 
-var defer = require('./defer');
-var cc = require('./core');
-var cb = require('./buffers');
+var defer   = require('./defer');
+var buffers = require('./buffers');
+var twrap   = require('./transducers');
 
 
 var MAX_PENDING = 8192;
@@ -131,20 +131,18 @@ var Channel = function Channel(internals) {
 };
 
 
-exports.chan = function(buf) {
-  var buffer;
-  if (typeof buf == "object")
-    buffer = buf;
-  else if (buf)
-    buffer = cb.Buffer(buf);
+exports.chan = function(buf, xform) {
+  var buffer = buf && ((typeof buf == "object") ? buf : buffers.Buffer(buf));
 
-  return new Channel({
+  var ch = new Channel({
     buffer  : buffer,
-    pending : cb.impl.RingBuffer(32, MAX_PENDING),
-    data    : cb.impl.RingBuffer(32, MAX_PENDING),
+    pending : buffers.impl.RingBuffer(32, MAX_PENDING),
+    data    : buffers.impl.RingBuffer(32, MAX_PENDING),
     pressure: 0,
     isClosed: false
   });
+
+  return (typeof xform == 'function') ? twrap(ch, xform) : ch;
 };
 
 exports.push = function(ch, val) {

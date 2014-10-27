@@ -1,7 +1,6 @@
 'use strict';
 
 var core = require('./core');
-var chan = require('./channels');
 
 
 function isReduced(x) {
@@ -33,8 +32,7 @@ var channelReducer = function(ch) {
 };
 
 
-module.exports = function(xform, buf) {
-  var ch = chan.chan(buf);
+module.exports = function(ch, xform) {
   var open = true;
   var xf = xform(channelReducer(ch));
   xf.init();
