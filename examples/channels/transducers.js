@@ -7,11 +7,11 @@ var csp = require('../../dist/index');
 csp.longStackSupport = true;
 
 var xf = t.compose(
-  t.map(function(x) { return x * 3; }),
-  t.filter(function(x) { return x % 2 == 0; }),
-  t.mapcat(function(x) { return [x, x]; }),
-  t.take(5),
-  t.partitionBy(function(x) { return x; })
+  //t.map(function(x) { return x * 3; }),
+  //t.filter(function(x) { return x % 2 == 0; }),
+  //t.mapcat(function(x) { return [x, x]; }),
+  t.take(5)//,
+  //t.partitionBy(function(x) { return x; })
 );
 
 function isReduced(x) {
@@ -26,10 +26,12 @@ function deref(x) {
 var ch = csp.tchan(xf, 1, isReduced, deref);
 
 csp.top(csp.go(function*() {
-  var i;
-  for (i = 0; i != 5 ; ++i)
-    yield ch.push(i);
-  ch.close();
+  var i, r;
+  for (i = 0; i != 10 ; ++i) {
+    r = yield ch.push(i);
+    console.log('push '+i+' => '+r);
+  }
+  //ch.close();
 }));
 
 csp.top(csp.go(function*() {

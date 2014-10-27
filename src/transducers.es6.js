@@ -7,17 +7,21 @@ var chan = require('./channels');
 var channelReducer = function(ch) {
   return {
     init: function() {
-      return ch;
+      return true;
     },
-    result: function(t) {
-      return t;
+    result: function(open) {
+      return open;
     },
-    step: function(t, val) {
+    step: function(open, val) {
       return core.go(function*() {
-        t = yield t;
+        var success;
+
+        open = yield open;
         val = yield val;
         if (val !== undefined)
           return yield ch.push(val);
+        else
+          return open;
       });
     }
   };
@@ -27,17 +31,18 @@ var channelReducer = function(ch) {
 module.exports = function(xform, buf, isReduced, deref) {
   var ch = chan.chan(buf);
   var xf = xform(channelReducer(ch));
-  xf.init();
+  var open = xf.init();
 
   return {
     push: function(val, handler) {
       return core.go(function*() {
-        var result = yield xf.step(1, val);
-        if (isReduced(result)) {
-          yield xf.result();
+        open = yield xf.step(open, val);
+        if (isReduced(open)) {
+          yield xf.result(yield deref(open));
+          open = false;
           ch.close();
         };
-        return true;
+        return open;
       });
     },
 
@@ -47,7 +52,8 @@ module.exports = function(xform, buf, isReduced, deref) {
 
     close: function() {
       core.go(function*() {
-        yield xf.result();
+        yield xf.result(open);
+        open = false;
         ch.close();
       });
     }
