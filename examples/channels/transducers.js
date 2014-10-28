@@ -3,41 +3,38 @@
 var t = require('transducers.js');
 
 
-function Cat(xform) {
-  this.xform = xform;
-}
-
-Cat.prototype.init = function() {
-  return this.xform.init();
-};
-
-Cat.prototype.result = function(v) {
-  return this.xform.result(v);
-};
-
-Cat.prototype.step = function(result, input) {
-  var xform = this.xform;
-  var newxform = {
+var preserveReduced = function(xf) {
+  return {
     init: function() {
-      return xform.init();
+      return xf.init();
     },
     result: function(v) {
       return v;
     },
     step: function(result, input) {
-      var val = xform.step(result, input);
+      var val = xf.step(result, input);
       return (val && val.__transducers_reduced__) ? new t.Reduced(val) : val;
     }
-  }
-
-  return t.reduce(input, newxform, result);
-};
-
-function cat(xform) {
-  return new Cat(xform);
+  };
 }
 
-function mapcat(f, ctx) {
+var cat = function(xform) {
+  var innerxf = preserveReduced(xform);
+
+  return {
+    init: function() {
+      return xform.init();
+    },
+    result: function(v) {
+      return xform.result(v);
+    },
+    step: function(result, input) {
+      return t.reduce(input, innerxf, result);
+    }
+  };
+}
+
+var mapcat = function(f) {
   return t.compose(t.map(f), cat);
 }
 
