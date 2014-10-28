@@ -40,12 +40,47 @@ var tchan = function(xf, start, stop) {
 };
 
 
+var channelToArray = function(ch) {
+  return csp.go(function*() {
+    var a = [];
+    yield csp.each(function(x) { a.push(x); }, ch);
+    return a;
+  });
+};
+
+
+var a = [];
+for (var i = 0; i < 20; ++i)
+  a.push(i);
+
+
 async(function*() {
-  console.log('expected: '+JSON.stringify(t.seq([0,1,2,3,4,5,6,7,8,9], xf))); 
+  var ms = 10;
+  var triangles, val, timer, i;
 
-  yield csp.each(console.log, tchan(xf, 1));
+  console.log('expected: '+JSON.stringify(t.seq(a, xf))); 
+  console.log('got     : '+JSON.stringify(yield channelToArray(tchan(xf, 1))));
 
-  console.log([1,2,3,4,5]);
-  console.log(t.seq([1,2,3,4,5], sums));
-  console.log(t.seq([1,2,3,4,5], t.compose(sums, sums)));
+  console.log('Triangle numbers:');
+  triangles = tchan(t.compose(sums, sums), 1);
+
+  console.log('Taking the first 10 numbers:');
+
+  for (i = 0; i < 10; ++i)
+    console.log(yield csp.pull(triangles));
+
+  console.log();
+  console.log('Taking further numbers for ' + ms + ' miliseconds:');
+
+  timer = csp.timeout(ms);
+  while (undefined !== (val = (yield csp.select(timer, triangles)).value))
+    console.log(val);
+
+  console.log();
+  console.log('Taking 10 more numbers:');
+
+  for (i = 0; i < 10; ++i)
+    console.log((yield csp.select(triangles)).value);
+
+  csp.close(triangles);
 });
