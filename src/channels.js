@@ -2,7 +2,7 @@
 
 var defer   = require('./defer');
 var buffers = require('./buffers');
-var twrap   = require('./transducers');
+var tchan   = require('./tchan');
 
 
 var MAX_PENDING = 8192;
@@ -142,7 +142,7 @@ exports.chan = function(buf, xform) {
     isClosed: false
   });
 
-  return (typeof xform == 'function') ? twrap(ch, xform) : ch;
+  return (typeof xform == 'function') ? tchan(ch, xform) : ch;
 };
 
 exports.push = function(ch, val) {

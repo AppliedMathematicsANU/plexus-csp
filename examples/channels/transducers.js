@@ -2,76 +2,22 @@
 
 var t = require('transducers.js');
 
-
-var preserveReduced = function(xf) {
-  return {
-    init: function() {
-      return xf.init();
-    },
-    result: function(v) {
-      return v;
-    },
-    step: function(result, input) {
-      var val = xf.step(result, input);
-      return (val && val.__transducers_reduced__) ? new t.Reduced(val) : val;
-    }
-  };
-}
-
-var cat = function(xform) {
-  var innerxf = preserveReduced(xform);
-
-  return {
-    init: function() {
-      return xform.init();
-    },
-    result: function(v) {
-      return xform.result(v);
-    },
-    step: function(result, input) {
-      return t.reduce(input, innerxf, result);
-    }
-  };
-}
-
-var mapcat = function(f) {
-  return t.compose(t.map(f), cat);
-}
+var csp = require('../../dist/index');
+var tx = csp.transducers;
 
 
 var xf = t.compose(
-  mapcat(function(x) { return [x, x*x]; }),
+  tx.mapcat(function(x) { return [x, x*x]; }),
   t.take(14),
   t.partitionBy(function(x) { return x % 3; }),
   t.filter(function(x) { return x.length > 1; }),
   t.map(function(x) { return x.join('#'); })
 );
 
-var reductions = function(fn, start) {
-  return function(xf) {
-    var _val = start;
-
-    return {
-      init: function() {
-        return xf.init();
-      },
-      result: function(val) {
-        return xf.result(val);
-      },
-      step: function(res, input) {
-        _val = (_val === undefined) ? input : fn(_val, input);
-        return xf.step(res, _val);
-      }
-    };
-  };
-};
-
-var sums = reductions(function(a,b) { return a + b; });
+var sums = tx.reductions(function(a,b) { return a + b; });
 
 
 // ---
-
-var csp = require('../../dist/index');
 
 csp.longStackSupport = true;
 
