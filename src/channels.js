@@ -158,8 +158,8 @@ exports.close = function(ch) {
 };
 
 
-var isObject = function(x) {
-  return x != null && x.constructor === Object;
+var isOptionsObject = function(x) {
+  return x != null && x.constructor === Object && typeof x.pull != 'function';
 };
 
 
@@ -191,7 +191,7 @@ var delegate = function(channel, result) {
 
 exports.select = function() {
   var args    = Array.prototype.slice.call(arguments);
-  var options = isObject(args[args.length - 1]) ? args.pop() : {};
+  var options = isOptionsObject(args[args.length - 1]) ? args.pop() : {};
   var result  = defer();
   var i, op;
 
