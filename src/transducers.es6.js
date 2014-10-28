@@ -7,8 +7,8 @@ var isReduced = function(x) {
   return x && x.__transducers_reduced__;
 };
 
-var deref = function(x) {
-  return x.value;
+var unreduced = function(x) {
+  return isReduced(x) ? x.value : x;
 };
 
 var forward = function(from, to) {
@@ -53,7 +53,7 @@ module.exports = function(ch, xform) {
           var result = yield xf.step(null, val);
           if (isReduced(result)) {
             open = false;
-            yield deref(yield xf.result(yield deref(result)));
+            yield unreduced(yield xf.result(yield unreduced(result)));
             ch.close();
           };
         }
@@ -70,7 +70,7 @@ module.exports = function(ch, xform) {
     close: function() {
       open = false;
       core.top(core.go(function*() {
-        yield deref(yield xf.result());
+        yield unreduced(yield xf.result());
         ch.close();
       }));
     }
