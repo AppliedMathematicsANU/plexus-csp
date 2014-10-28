@@ -50,23 +50,25 @@ var channelToArray = function(ch) {
 
 
 var a = [];
-for (var i = 0; i < 20; ++i)
+for (var i = 1; i < 20; ++i)
   a.push(i);
 
 
 async(function*() {
-  var ms = 10;
+  var ms = 5;
   var triangles, val, timer, i;
 
+  console.log('Some complicated transformation:');
   console.log('expected: '+JSON.stringify(t.seq(a, xf))); 
   console.log('got     : '+JSON.stringify(yield channelToArray(tchan(xf, 1))));
 
+  console.log();
   console.log('Triangle numbers:');
   triangles = tchan(t.compose(sums, sums), 1);
 
-  console.log('Taking the first 10 numbers:');
+  console.log('Taking the first 5 numbers:');
 
-  for (i = 0; i < 10; ++i)
+  for (i = 0; i < 5; ++i)
     console.log(yield csp.pull(triangles));
 
   console.log();
@@ -77,9 +79,9 @@ async(function*() {
     console.log(val);
 
   console.log();
-  console.log('Taking 10 more numbers:');
+  console.log('Taking 5 more numbers:');
 
-  for (i = 0; i < 10; ++i)
+  for (i = 0; i < 5; ++i)
     console.log((yield csp.select(triangles)).value);
 
   csp.close(triangles);
