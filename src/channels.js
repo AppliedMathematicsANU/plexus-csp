@@ -112,38 +112,36 @@ var close = function(ch) {
 };
 
 
-var Channel = function Channel(internals) {
-  this.push = function(val, client) {
-    var handler = client || defer();
-    requestPush(internals, val, handler);
-    return handler;
-  };
-
-  this.pull = function(client) {
-    var handler = client || defer();
-    requestPull(internals, handler);
-    return handler;
-  };
-
-  this.close = function() {
-    close(internals);
-  };
-};
-
-
 exports.chan = function(buf, xform) {
-  var buffer = buf && ((typeof buf == "object") ? buf : buffers.Buffer(buf));
-
-  var ch = new Channel({
-    buffer  : buffer,
+  var internals = {
+    buffer  : buf && ((typeof buf == "object") ? buf : buffers.Buffer(buf)),
     pending : buffers.impl.RingBuffer(32, MAX_PENDING),
     data    : buffers.impl.RingBuffer(32, MAX_PENDING),
     pressure: 0,
     isClosed: false
-  });
+  };
+
+  var ch = {
+    push: function(val, client) {
+      var handler = client || defer();
+      requestPush(internals, val, handler);
+      return handler;
+    },
+
+    pull: function(client) {
+      var handler = client || defer();
+      requestPull(internals, handler);
+      return handler;
+    },
+
+    close: function() {
+      close(internals);
+    }
+  };
 
   return (typeof xform == 'function') ? tchan(ch, xform) : ch;
 };
+
 
 exports.push = function(ch, val) {
   return ch.push(val);
