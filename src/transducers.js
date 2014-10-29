@@ -7,6 +7,10 @@ var isReduced = function(x) {
   return x && x.__transducers_reduced__;
 };
 
+var unreduced = function(x) {
+  return isReduced(x) ? x.value : x;
+};
+
 var preservingReduced = function(xf) {
   return {
     init: function() {
@@ -63,7 +67,37 @@ var reductions = function(fn, start) {
 };
 
 
+var sort = function(fn) {
+  return function(xf) {
+    var _data = [];
+
+    return {
+      init: function() {
+        return xf.init();
+      },
+      result: function(val) {
+        _data.sort(fn);
+
+        for (var i = 0; i < _data.length; ++i) {
+          val = xf.step(val, _data[i]);
+          if (isReduced(val))
+            break;
+        };
+
+        return unreduced(xf.result(val));
+      },
+      step: function(res, input) {
+        _data.push(input);
+        return res;
+      }
+    };
+  };
+};
+
+
 module.exports = {
+  cat       : cat,
   mapcat    : mapcat,
-  reductions: reductions
+  reductions: reductions,
+  sort      : sort
 };
