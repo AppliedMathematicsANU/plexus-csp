@@ -43,17 +43,17 @@ var channelReducer = function(ch) {
 module.exports = function(ch, xform) {
   var open = true;
   var xf = xform(channelReducer(ch));
-  xf.init();
+  var acc = xf.init();
 
   return {
     push: function(val, handler) {
       var deferred = core.go(function*() {
         var success = open;
         if (open) {
-          var result = yield xf.step(null, val);
-          if (isReduced(result)) {
+          acc = yield xf.step(acc, val);
+          if (isReduced(acc)) {
             open = false;
-            yield unreduced(yield xf.result(yield unreduced(result)));
+            yield xf.result(yield unreduced(acc));
             ch.close();
           };
         }
@@ -68,11 +68,13 @@ module.exports = function(ch, xform) {
     },
 
     close: function() {
-      open = false;
-      core.top(core.go(function*() {
-        yield unreduced(yield xf.result());
-        ch.close();
-      }));
+      if (open) {
+        open = false;
+        core.top(core.go(function*() {
+          yield xf.result(acc);
+          ch.close();
+        }));
+      }
     }
   };
 };
