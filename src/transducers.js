@@ -49,18 +49,16 @@ var mapcat = function(f) {
 
 var reductions = function(fn, start) {
   return function(xf) {
-    var _val = start;
-
     return {
       init: function() {
-        return xf.init();
+        return { acc: xf.init(), val: start };
       },
-      result: function(val) {
-        return xf.result(val);
+      result: function(res) {
+        return xf.result(res.acc);
       },
       step: function(res, input) {
-        _val = (_val === undefined) ? input : fn(_val, input);
-        return xf.step(res, _val);
+        var val = (res.val === undefined) ? input : fn(res.val, input);
+        return { acc: xf.step(res.acc, val), val: val };
       }
     };
   };
