@@ -44,18 +44,20 @@ var tryPush = function(ch, val) {
 
 var requestPush = function(ch, val, client) {
   if (client.isResolved())
-    return;
+    return client;
 
   if (val === undefined)
     client.reject(new Error("push() requires an value"));
   else if (ch.isClosed)
-    client.resolve(false);
+    return false;
   else if (tryPush(ch, val))
-    client.resolve(true);
+    return true;
   else if (!addPending(ch, client, val))
     client.reject(new Error("channel queue overflow"));
   else
     ++ch.pressure;
+
+  return client;
 };
 
 var tryPull = function(ch) {
@@ -86,13 +88,15 @@ var requestPull = function(ch, client) {
 
   var res = tryPull(ch);
   if (res !== undefined)
-    client.resolve(res);
+    return res;
   else if (ch.isClosed)
-    client.resolve();
+    return;
   else if (!addPending(ch, client))
     client.reject(new Error("channel queue overflow"));
   else
     --ch.pressure;
+
+  return client;
 };
 
 var close = function(ch) {
@@ -124,14 +128,12 @@ exports.chan = function(buf, xform) {
   var ch = {
     push: function(val, client) {
       var handler = client || defer();
-      requestPush(internals, val, handler);
-      return handler;
+      return requestPush(internals, val, handler);
     },
 
     pull: function(client) {
       var handler = client || defer();
-      requestPull(internals, handler);
-      return handler;
+      return requestPull(internals, handler);
     },
 
     close: function() {
@@ -191,7 +193,7 @@ exports.select = function() {
   var args    = Array.prototype.slice.call(arguments);
   var options = isOptionsObject(args[args.length - 1]) ? args.pop() : {};
   var result  = defer();
-  var i, op;
+  var i, op, handler, val;
 
   if (!options.priority)
     randomShuffle(args);
@@ -200,10 +202,18 @@ exports.select = function() {
     op = args[i];
     if (op == null)
       continue;
-    else if (Array.isArray(op))
-      op[0].push(op[1], delegate(op[0], result));
-    else
-      op.pull(delegate(op, result));
+
+    if (Array.isArray(op)) {
+      handler = delegate(op[0], result);
+      val = op[0].push(op[1], handler);
+    } else {
+      handler = delegate(op, result);
+      val = op.pull(handler);
+    }
+    if (val != handler) {
+      handler.resolve(val);
+      break;
+    }
   }
 
   if (options.hasOwnProperty('default') && !result.isResolved())

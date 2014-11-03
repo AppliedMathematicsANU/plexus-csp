@@ -207,11 +207,17 @@ var implementation = function(type, counter) {
     },
 
     push: function(val, h) {
-      this._channel.push(val, this.makeHandler(h));
+      var hh = this.makeHandler(h);
+      var out = this._channel.push(val, hh);
+      if (out != hh)
+        hh.resolve(out);
     },
 
     pull: function(h) {
-      this._channel.pull(this.makeHandler(h));
+      var hh = this.makeHandler(h);
+      var out = this._channel.pull(hh);
+      if (out != hh)
+        hh.resolve(out);
     },
 
     apply: function(command, args) {
