@@ -65,20 +65,18 @@ exports.createLock = function() {
 };
 
 
-exports.fromGenerator = function(gen) {
+exports.iterator = function(next) {
   var _closed = false;
 
   return {
     pull: function(client) {
       var handler = client || core.defer();
-      var value = undefined;
+      var value;
 
       if (!_closed) {
-        var step = gen.next();
-        if (step.done)
+        value = next();
+        if (value === undefined)
           _closed = true;
-        else
-          value = step.value;
       }
 
       handler.resolve(value);
@@ -88,6 +86,14 @@ exports.fromGenerator = function(gen) {
       _closed = true;
     }
   };
+};
+
+
+exports.fromGenerator = function(gen) {
+  return exports.iterator(function() {
+    var step = gen.next();
+    return step.done ? undefined : step.value;
+  });
 };
 
 
