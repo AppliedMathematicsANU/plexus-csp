@@ -66,19 +66,28 @@ exports.createLock = function() {
 
 
 exports.fromGenerator = function(gen) {
-  var output = channels.chan();
+  var _closed = false;
 
-  core.go(function*() {
-    var step;
-    while (true) {
-      step = gen.next();
-      if (step.done || !(yield output.push(step.value)))
-        break
+  return {
+    pull: function(client) {
+      var handler = client || core.defer();
+      var value = undefined;
+
+      if (!_closed) {
+        var step = gen.next();
+        if (step.done)
+          _closed = true;
+        else
+          value = step.value;
+      }
+
+      handler.resolve(value);
+      return handler;
+    },
+    close: function() {
+      _closed = true;
     }
-    output.close();
-  });
-
-  return output;
+  };
 };
 
 
