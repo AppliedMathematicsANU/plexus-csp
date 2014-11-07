@@ -1,6 +1,6 @@
 'use strict';
 
-var cc       = require('./core');
+var core     = require('./core');
 var channels = require('./channels');
 
 
@@ -20,7 +20,7 @@ exports.ticker = function(ms) {
   var step = function() {
     clearTimeout(t);
     t = setTimeout(step, ms);
-    cc.go(function*() {
+    core.go(function*() {
       if (!(yield channels.push(ch, null)))
         clearTimeout(t);
     });
@@ -31,7 +31,7 @@ exports.ticker = function(ms) {
 
 
 exports.each = function(fn, input) {
-  return cc.go(function*() {
+  return core.go(function*() {
     var val;
     while (undefined !== (val = yield channels.pull(input)))
       if (fn)
@@ -40,81 +40,75 @@ exports.each = function(fn, input) {
 };
 
 
-exports.fromGenerator = function(gen, output) {
-  var managed = output == null;
-  if (managed)
-    output = channels.chan();
+exports.pipe = function(input, output, keepOpen) {
+  return core.go(function*() {
+    var val;
+    while (undefined !== (val = yield input.pull()))
+      if (!(yield output.push(val)))
+        break;
+    if (!keepOpen) {
+      input.close();
+      output.close();
+    }
+  });
+};
 
-  cc.go(function*() {
+
+exports.createLock = function() {
+  var _busy = channels.chan();
+  _busy.push(null);
+
+  return {
+    acquire: function() { return _busy.pull(); },
+    release: function() { return _busy.push(null); }
+  };
+};
+
+
+exports.fromGenerator = function(gen) {
+  var output = channels.chan();
+
+  core.go(function*() {
     var step;
-
     while (true) {
       step = gen.next();
-      if (step.done)
-        break;
-      if (!(yield channels.push(output, step.value)))
+      if (step.done || !(yield output.push(step.value)))
         break
     }
-
-    if (managed)
-      channels.close(output);
+    output.close();
   });
 
   return output;
 };
 
 
-function Lock() {
-  this.busy = channels.chan();
-  this.release();
-};
-
-Lock.prototype = {
-  acquire: function() {
-    return channels.pull(this.busy);
-  },
-  release: function() {
-    channels.push(this.busy, null);
-  }
-};
-
-
-exports.createLock = function() {
-  return new Lock();
-};
-
-
-exports.fromStream = function(stream, output, onOutputClosed)
+exports.fromStream = function(stream, closeStream)
 {
-  var lock = exports.createLock();
-
-  var managed = (output == null);
-  if (managed)
-    output = channels.chan();
+  var output = channels.chan();
+  var lock   = exports.createLock();
 
   stream.on('readable', function() {
-    cc.go(function*() {
+    core.go(function*() {
       var chunk;
 
       yield lock.acquire();
 
-      while (null !== (chunk = stream.read()))
-        if (!(yield channels.push(output, chunk))) {
-          if (onOutputClosed)
-            onOutputClosed();
-          return;
+      while (null !== (chunk = stream.read())) {
+        if (!(yield output.push(chunk))) {
+          closeStream && closeStream();
+          break;
         }
+      }
 
       lock.release();
     });
   });
 
   stream.on('end', function() {
-    if (managed)
-      cc.go(function*() {
-        yield lock.acquire();
-        channels.close(output);
-      });
+    core.go(function*() {
+      yield lock.acquire();
+      output.close();
+    });
   });
 
   stream.on('error', function(err) {

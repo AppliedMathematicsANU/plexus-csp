@@ -9,7 +9,7 @@ var source = function*(start) {
 };
 
 var writeThings = function(ch) {
-  csp.fromGenerator(source(1), ch);
+  csp.pipe(csp.fromGenerator(source(1)), ch);
 };
 
 var readThings = function(ch) {
