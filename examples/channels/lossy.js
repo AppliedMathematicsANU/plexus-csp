@@ -3,13 +3,13 @@
 var csp = require('../../dist/index');
 
 
-var source = function*(start) {
-  for (var i = 1; ; ++i)
-    yield(i);
-};
-
 var writeThings = function(ch) {
-  csp.pipe(csp.fromGenerator(source(1)), ch);
+  var data = csp.generate(function*() {
+    for (var i = 1; ; ++i)
+      yield(i);
+  });
+
+  csp.pipe(data, ch);
 };
 
 var readThings = function(ch) {

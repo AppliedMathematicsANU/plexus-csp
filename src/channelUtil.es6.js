@@ -65,7 +65,7 @@ exports.createLock = function() {
 };
 
 
-exports.iterator = function(next) {
+exports.iterate = function(next) {
   var _closed = false;
 
   return {
@@ -89,9 +89,11 @@ exports.iterator = function(next) {
 };
 
 
-exports.fromGenerator = function(gen) {
-  return exports.iterator(function() {
-    var step = gen.next();
+exports.generate = function(genFn) {
+  var _gen = genFn();
+
+  return exports.iterate(function() {
+    var step = _gen.next();
     return step.done ? undefined : step.value;
   });
 };
