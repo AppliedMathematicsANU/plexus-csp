@@ -134,3 +134,78 @@ exports.fromStream = function(stream, closeStream)
 
   return output;
 };
+
+
+var forward = function(from, to) {
+  from.then(
+    function(val) { to.resolve(val); },
+    function(err) { to.reject(err); }
+  );
+  return to;
+};
+
+
+exports.multiChan = function() {
+  var _open = true;
+  var _lock = exports.createLock();
+  var _outchs = [];
+
+  return {
+    push: function(val, handler) {
+      if (!_open) {
+        handler.resolve(false);
+        return;
+      } else if (val === undefined) {
+        handler.reject(new Error("push() requires a value"));
+        return;
+      }
+
+      var deferred = core.go(function*() {
+        var i;
+        yield _lock.acquire();
+
+        for (i = 0; i < _outchs.length; ++i)
+          yield _outchs[i].push(val);
+
+        _lock.release();
+        return true;
+      });
+
+      return handler ? forward(deferred, handler) : deferred;
+    },
+
+    close: function() {
+      _open = false;
+    },
+
+    tap: function(outch) {
+      return core.go(function*() {
+        yield _lock.acquire();
+        _outchs.push(outch);
+        _lock.release();
+      });
+    },
+
+    untap: function(outch) {
+      return core.go(function*() {
+        var i;
+
+        yield _lock.acquire();
+
+        i = _outchs.indexOf(outch);
+        if (i >= 0)
+          _outchs.splice(i, 1);
+
+        _lock.release();
+      });
+    },
+
+    untapAll: function() {
+      return core.go(function*() {
+        yield _lock.acquire();
+        _outchs.splice(0);
+        _lock.release();
+      });
+    }
+  };
+};
