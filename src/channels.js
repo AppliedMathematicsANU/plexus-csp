@@ -47,7 +47,7 @@ var requestPush = function(ch, val, client) {
     return;
 
   if (val === undefined)
-    client.reject(new Error("push() requires an value"));
+    client.reject(new Error("push() requires a value"));
   else if (ch.isClosed)
     client.resolve(false);
   else if (tryPush(ch, val))
