@@ -46,11 +46,13 @@ var csp = require('plexus-csp');
 
 Client code that uses go blocks still needs to run on an engine that supports generators or be precompiled into ES5-compliant code, for example with [browserify](https://github.com/substack/node-browserify) and the [regeneratorify](https://github.com/amiorin/regeneratorify) plugin.
 
+<!---
 When running on a JS engine that supports generators directly, such as NodeJS 0.11.x with the `--harmony` option, use the following line instead:
 
 ```javascript
 var csp = require('plexus-csp/src/index.js');
 ```
+--->
 
 Documentation
 -------------
