@@ -39,6 +39,7 @@ function RingBuffer(size, limit) {
   function read() {
     if (data_count > 0) {
       var val = data[data_start];
+      delete data[data_start];
       data_start = (data_start + 1) % size;
       data_count = Math.max(data_count - 1, 0);
       return val;
