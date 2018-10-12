@@ -25,7 +25,7 @@ function RingBuffer(size, limit) {
   };
 
   function write(val) {
-    if (data_count == size || size < limit)
+    if (data_count == size && size < limit)
       _resize(Math.min(limit, Math.max(1, Math.ceil(size * 1.5))));
 
     var pos = (data_start + data_count) % size;
