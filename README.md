@@ -62,7 +62,7 @@ Find the full API documentation [here](https://github.com/AppliedMathematicsANU/
 Tutorial
 --------
 
-###Go Blocks
+### Go Blocks
 
 Go blocks provide concurrent 'threads' of execution within a single Javascript thread. Let's look at a simple example:
 
@@ -95,7 +95,7 @@ The output looks like this:
 
 Two go blocks are created by calling the `go` function with a generator argument (using the `function*` keyword). The blocks run after the main program is finished. Whenever an expression preceded by `yield` is encountered, the current go block pauses after evaluating the expression, so that the other one can run.
 
-###Deferreds
+### Deferreds
 
 Things get more interesting when we add asynchronous calls to the mix. The following code wraps a Node-style callback into a deferred value:
 
@@ -135,7 +135,7 @@ The output looks something like this:
 
 A `yield` with an expression that evaluates to a deferred suspends the current go block. When the deferred is resolved, the block is scheduled to be resumed with the resulting value. From inside the block, this looks exactly like a blocking function call, except for the fact that we needed to add the `yield` keyword.
 
-###Running Things in Parallel
+### Running Things in Parallel
 
 The code above reads the three files sequentially. We can instead read in parallel while still keeping the output in order by separating the function calls from the `yield` statements that force the results:
 
@@ -167,7 +167,7 @@ showLength('README.md');
 
 The order of the output lines now depends on which reads finished first and can be different between runs.
 
-###Deferreds vs Promises
+### Deferreds vs Promises
 
 Another point worth noting is that plexus-csp's deferreds are not meant to be passed along and shared like promises. They are basically throw-away objects with the single purpose of decoupling the producer and consumer of a value. This is because plexus-csp's higher-level facilities for composing asynchronous computations are based on blocking channels as in Go rather than promises, and the extra functionality such as support for multiple callbacks or chaining is not needed at this level. That said, plexus-csp also lets us apply a `yield` directly to a promise, which can come in handy when working with libraries that already provide these. To demonstrate, here's a drop-in replacement for the `readFile` function above using the [q](https://github.com/kriskowal/q/tree/v0.9) library:
 
@@ -178,7 +178,7 @@ var fs = require('fs');
 var readFile = Q.nbind(fs.readFile, fs);
 ```
 
-###Composing Go Blocks
+### Composing Go Blocks
 
 To be useful in practice, go blocks need to be able to return values, so that we can reuse smaller building blocks to form larger ones and finally whole programs. The return value of a `go` call is simply a deferred that will resolve to the return value of the generator that defines the go block. To see this in action, let's write a `fileLength` function based on `readFile`:
 
@@ -202,7 +202,7 @@ csp.go(function*() {
 
 Note that the value returned from within the go block will always be wrapped in a deferred, even if it already is a deferred. It is therefore not uncommon to see a return statement of the form `return yield x;`.
 
-###Error Handling Basics
+### Error Handling Basics
 
 If you've tried any of the examples above, you may have noticed that we don't see anything like a top-level stack trace when things go wrong, for example when a file to be read does not exist. Instead of working with fixed file names in our example, we can try taking a command line argument to see this more clearly:
 
@@ -245,7 +245,7 @@ csp.top(csp.go(function*() {
 
 This produces the same stack trace as above.
 
-###More on Error Handling
+### More on Error Handling
 
 Error handling in plexus-csp has a few subtleties: first, errors can only be propagated outward if each nested go block in the chain is actually forced with a `yield`. Second, the outermost go block in the call chain has nowhere to propagate to, so we need to explicitly catch exceptions as in the example above. Third, since normal stack traces reflect the Javascript call chain, which is different from the chain of go blocks, we miss a lot of useful information. For instance, there's no mention of `fileLength` or the 'main' go block in the above.
 
@@ -278,7 +278,7 @@ Much more useful!
 
 Enabling `longStackSupport` incurs some extra memory and runtime costs for each go block execution, so it is probably best to only use it in development.
 
-###NodeJS Helpers
+### NodeJS Helpers
 
 Plexus-csp provides a few helpers that make interoperating with libraries that use NodeJS-style callback conventions easier. First, there is `ncallback` which takes a deferred and returns a callback that resolves or rejects that deferred depending on its argument. This allows us to simplify the original `readFile` function from the [Deferreds](#deferreds) section like this:
 
@@ -312,7 +312,7 @@ csp.nodeify(fileLength(process.argv[2]), function(err, val) {
 });
 ```
 
-###Channels
+### Channels
 
 Here is a simple example of channels in action:
 ```javascript
@@ -339,7 +339,7 @@ We first create a channel by calling the function `chan`. We then run two go blo
 
 The `close` function closes a channel immediately, which means that all pending operations on it will be cancelled and no further data can be pushed. Pulls from a buffered channel are still possible until its buffer is exhausted. In our example, the channel is unbuffered, so there are no further values to be pulled. This is signalled to the second go block by returning the value `undefined` on the next call to `pull`.
 
-###Buffered Channels
+### Buffered Channels
 
 Let's now investigate some buffering options for channels. We start by defining a function that writes numbers onto a provided channel:
 
@@ -401,7 +401,7 @@ The function `run` creates a channel with the specified buffer (or an unbuffered
 
 Plexus-csp provides three types of buffer, all of fixed size, which differ only in how they handle a push operation when full. A `Buffer` will block the push until a slot becomes available due to a subsequent pull. A `DroppingBuffer` will accept the push, but drop the new value. A `SlidingBuffer` will accept the push and buffer the new value, but drop the oldest value it holds in order to make room.
 
-###Working with Multiple Channels
+### Working with Multiple Channels
 
 In the next example, we simulate a simple worker pool. Let's first define a function that starts a worker on a channel of jobs and returns a fresh channel with that worker's output:
 
@@ -485,7 +485,7 @@ c 8
 a 9
 ```
 
-###Select
+### Select
 
 An alternative to the merge approach is the `select` function, which takes a number of channels as arguments and returns a result of the form `{ channel: ..., value: ... }`, where `channel` is the first channel it can pull from, and `value` is the associated value. We can use this in our example as follows:
 
